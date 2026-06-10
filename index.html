@@ -344,6 +344,8 @@ function _doCancel(){
   }
 }
 function init(){
+  if(window._initDone)return; // prevent duplicate listener attachment
+  window._initDone=true;
   // Called after auth — load from Firebase
   window._fbDB.ref('roadmaps').once('value').then(function(snap){
     state.roadmaps=snap.exists()?snap.val():{};
@@ -1078,6 +1080,7 @@ function authSignIn(){
   var msg=document.getElementById('auth-msg');
   var err=document.getElementById('auth-err');
   btn.disabled=true;
+  btn.style.opacity='0.6';
   msg.style.display='block';msg.textContent='Opening Google sign-in...';
   err.style.display='none';
   var provider=new firebase.auth.GoogleAuthProvider();
@@ -1094,10 +1097,20 @@ function authSignIn(){
     // success — onAuthStateChanged handles the rest
   }).catch(function(e){
     btn.disabled=false;
+    btn.style.opacity='1';
     msg.style.display='none';
-    if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
-      err.style.display='block';
-      err.textContent='Sign-in failed: '+e.code;
+    var silentCodes=['auth/popup-closed-by-user','auth/cancelled-popup-request'];
+    if(silentCodes.indexOf(e.code)>-1){
+      // User closed popup — no error needed, just re-enable button
+      return;
+    }
+    err.style.display='block';
+    if(e.code==='auth/popup-blocked'){
+      err.textContent='Popup was blocked by your browser. Please allow popups for this site and try again.';
+    } else if(e.code==='auth/network-request-failed'){
+      err.textContent='Network error. Please check your connection and try again.';
+    } else {
+      err.textContent='Sign-in failed: '+(e.code||e.message||'Unknown error');
     }
   });
 }
@@ -1125,6 +1138,7 @@ var _fbConfig={
 };
 firebase.initializeApp(_fbConfig);
 window._fbDB=firebase.database();
+window._initDone=false;
 
 firebase.auth().onAuthStateChanged(function(user){
   var overlay=document.getElementById('auth-overlay');
@@ -1143,6 +1157,16 @@ firebase.auth().onAuthStateChanged(function(user){
     init();
   } else {
     window._currentUser=null;
+    // Detach Firebase listeners so they don't fire after sign-out
+    if(window._fbDB){
+      window._fbDB.ref('roadmaps').off();
+      window._fbDB.ref('activity').off();
+    }
+    // Reset init flag so init() runs fresh on next sign-in
+    window._initDone=false;
+    // Reset app state
+    state.roadmaps={};state.activeId=null;state.selectedPill=null;
+    _clearDraftsForRoadmap();
     if(overlay)overlay.style.display='flex';
     if(badgeWrap)badgeWrap.style.display='none';
     if(signoutBtn)signoutBtn.style.display='none';
@@ -1150,8 +1174,13 @@ firebase.auth().onAuthStateChanged(function(user){
     // Reset auth UI
     var btn=document.getElementById('auth-btn');
     var msg=document.getElementById('auth-msg');
-    if(btn){btn.disabled=false;}
+    if(btn){btn.disabled=false;btn.style.opacity='1';}
     if(msg)msg.style.display='none';
+    // Clear sidebar/canvas
+    var sb=document.getElementById('sidebar');
+    var cv=document.getElementById('canvas');
+    if(sb)sb.innerHTML='';
+    if(cv)cv.innerHTML='';
   }
 });
 </script>
