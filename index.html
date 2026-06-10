@@ -276,13 +276,28 @@ window.signInWithGoogle = function(){
   document.getElementById('auth-error').style.display='none';
 };
 window.signOut = function(){};
+// Show "Verifying..." if returning from Google redirect
+(function(){
+  try {
+    if(sessionStorage.getItem('sootchy_redirect_pending')==='1'){
+      document.addEventListener('DOMContentLoaded',function(){
+        var l=document.getElementById('auth-loading');
+        var b=document.getElementById('auth-google-btn');
+        var s=document.getElementById('auth-sub');
+        if(l){l.style.display='block';l.textContent='Verifying your account...';}
+        if(b){b.style.display='none';}
+        sessionStorage.removeItem('sootchy_redirect_pending');
+      });
+    }
+  } catch(e){}
+})();
 </script>
 
 <!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut as fbSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC2Gdsm6aNIuzKeuhwu_bE-DOOTw3jrusA",
@@ -305,20 +320,32 @@ const provider = new GoogleAuthProvider();
 
 let currentUser = null;
 
+// Handle redirect result when user returns from Google sign-in
+getRedirectResult(auth).then(result => {
+  if (!result) return; // No redirect in progress
+  const email = result.user.email;
+  const allowed = email.endsWith('@' + ALLOWED_DOMAIN) || ALLOWED_EMAILS.includes(email);
+  if (!allowed) {
+    fbSignOut(auth);
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-error').textContent = 'Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are allowed.';
+  }
+}).catch(e => {
+  if (e.code !== 'auth/no-current-user') {
+    const errEl = document.getElementById('auth-error');
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Sign-in failed: ' + (e.message || 'Unknown error'); }
+  }
+});
+
 // ── AUTH ─────────────────────────────────────────────────────────────────────
 window.signInWithGoogle = async function() {
   document.getElementById('auth-loading').style.display = 'block';
   document.getElementById('auth-error').style.display = 'none';
   try {
-    const result = await signInWithPopup(auth, provider);
-    const email = result.user.email;
-    const allowed = email.endsWith('@' + ALLOWED_DOMAIN) || ALLOWED_EMAILS.includes(email);
-    if (!allowed) {
-      await fbSignOut(auth);
-      document.getElementById('auth-loading').style.display = 'none';
-      document.getElementById('auth-error').style.display = 'block';
-      document.getElementById('auth-error').textContent = 'Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are allowed.';
-    }
+    // Redirect — stays on same page, no popup, no new tab
+    try { sessionStorage.setItem('sootchy_redirect_pending','1'); } catch(e){}
+    await signInWithRedirect(auth, provider);
   } catch(e) {
     document.getElementById('auth-loading').style.display = 'none';
     document.getElementById('auth-error').style.display = 'block';
@@ -379,16 +406,19 @@ window.trySignIn = function() {
   const isAllowed = email.endsWith('@' + ALLOWED_DOMAIN_CHECK) || ALLOWED_EMAILS.includes(email);
   if (!isAllowed) return;
 
-  // Set the hint on the Google provider so it pre-selects the right account
+  // Pre-select the matching Google account
   provider.setCustomParameters({ login_hint: email });
+
+  // Show redirect message before leaving the page
+  const btn = document.getElementById('auth-google-btn');
+  const loading = document.getElementById('auth-loading');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; btn.innerHTML = 'Redirecting to Google...'; }
+  if (loading) { loading.style.display = 'block'; loading.textContent = 'Taking you to Google sign-in...'; }
 
   if (typeof signInWithGoogle === 'function') {
     signInWithGoogle();
   } else {
-    document.getElementById('auth-loading').style.display = 'block';
-    setTimeout(() => {
-      if (typeof signInWithGoogle === 'function') signInWithGoogle();
-    }, 800);
+    setTimeout(() => { if (typeof signInWithGoogle === 'function') signInWithGoogle(); }, 600);
   }
 };
 
