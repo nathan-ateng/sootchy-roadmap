@@ -285,7 +285,7 @@ window.signOut = function(){};
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut as fbSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC2Gdsm6aNIuzKeuhwu_bE-DOOTw3jrusA",
@@ -307,44 +307,6 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 let currentUser = null;
-
-// Handle redirect result when user returns from Google sign-in
-getRedirectResult(auth).then(result => {
-  if (!result) return; // No redirect in progress
-  const email = result.user.email;
-  const allowed = email.endsWith('@' + ALLOWED_DOMAIN) || ALLOWED_EMAILS.includes(email);
-  if (!allowed) {
-    fbSignOut(auth);
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('auth-error').style.display = 'block';
-    document.getElementById('auth-error').textContent = 'Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are allowed.';
-  }
-}).catch(e => {
-  if (e.code !== 'auth/no-current-user') {
-    const errEl = document.getElementById('auth-error');
-    if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Sign-in failed: ' + (e.message || 'Unknown error'); }
-  }
-});
-
-// ── AUTH ─────────────────────────────────────────────────────────────────────
-window.signInWithGoogle = async function() {
-  document.getElementById('auth-loading').style.display = 'block';
-  document.getElementById('auth-error').style.display = 'none';
-  try {
-    // Redirect — stays on same page, no popup, no new tab
-    await signInWithRedirect(auth, provider);
-  } catch(e) {
-    document.getElementById('auth-loading').style.display = 'none';
-    document.getElementById('auth-error').style.display = 'block';
-    document.getElementById('auth-error').textContent = 'Sign-in failed: ' + (e.message || 'Unknown error');
-  }
-};
-
-window.signOut = async function() {
-  if (!confirm('Sign out?')) return;
-  await fbSignOut(auth);
-};
-
 
 
 onAuthStateChanged(auth, user => {
