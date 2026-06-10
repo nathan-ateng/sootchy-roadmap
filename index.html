@@ -544,7 +544,7 @@ function renderSidebar(){
           <button class="btn btn-blue btn-sm" style="flex:1;font-size:11px;padding:5px;background:#1A7A4A;color:#fff;border-radius:5px" onclick="_saveItem(${li},${pi})">💾 Save item</button>
           <button class="btn btn-neutral btn-sm" style="flex:1;font-size:11px;padding:5px" onclick="_cancelItem(${li},${pi})">✕ Cancel</button>
         </div>
-      </div>\`;
+      </div>`;
     });
     h+=`<div class="add-item" onclick="addPill(${li})">＋ Add item</div></div></div>`;
   });
@@ -1083,7 +1083,24 @@ function authSignIn(){
   btn.style.opacity='0.6';
   msg.style.display='block';msg.textContent='Opening Google sign-in...';
   err.style.display='none';
-  var provider=new firebase.auth.GoogleAuthProvider();
+  // Defensive checks before calling Firebase
+  if(typeof firebase==='undefined'){
+    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
+    err.style.display='block';err.textContent='Firebase failed to load. Please refresh the page.';
+    return;
+  }
+  if(typeof firebase.auth!=='function'){
+    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
+    err.style.display='block';err.textContent='Firebase Auth not ready. Please refresh the page.';
+    return;
+  }
+  var provider;
+  try{ provider=new firebase.auth.GoogleAuthProvider(); }
+  catch(e){
+    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
+    err.style.display='block';err.textContent='Auth error: '+e.message;
+    return;
+  }
   firebase.auth().signInWithPopup(provider).then(function(result){
     var email=(result.user.email||'').toLowerCase();
     if(!email.endsWith('@sootchy.com')){
