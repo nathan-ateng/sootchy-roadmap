@@ -146,59 +146,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .toast.show{opacity:1}
 .empty{padding:60px 20px;text-align:center;color:var(--light);font-size:13px}
 
-/* AUTH SCREEN */
-.auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 48px;display:flex;flex-direction:column;align-items:center;gap:20px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.08)}
-.auth-logo{font-size:26px;font-weight:800;color:var(--blue);letter-spacing:-.5px}
-.auth-title{font-size:16px;font-weight:700;color:var(--text);text-align:center}
-.auth-sub{font-size:12px;color:var(--mid);text-align:center;line-height:1.6;margin-top:-8px}
-.auth-btn{display:flex;align-items:center;gap:10px;padding:11px 22px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text);transition:box-shadow .15s,opacity .15s;width:100%;justify-content:center}
-.auth-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.auth-error{font-size:12px;color:var(--red);text-align:center;padding:8px 12px;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:6px;width:100%}
-.auth-loading{font-size:12px;color:var(--mid);text-align:center}
-
-/* USER BADGE in topbar */
+/* ── AUTH ── */
+.auth-overlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999}
+.auth-card{background:#fff;border:1px solid #DDE2EA;border-radius:16px;padding:40px 44px;width:360px;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.auth-logo{font-size:26px;font-weight:800;color:#1B4F8A;letter-spacing:-.5px}
+.auth-title{font-size:16px;font-weight:700;color:#1A1A1A;text-align:center;margin-top:-6px}
+.auth-sub{font-size:12px;color:#555;text-align:center;line-height:1.6;margin-top:-10px}
+.auth-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px;background:#fff;border:1px solid #DDE2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter','Segoe UI',Arial,sans-serif;color:#1A1A1A;transition:box-shadow .15s}
+.auth-google-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.auth-google-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{width:100%;padding:8px 12px;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:6px;font-size:12px;color:#C62828;text-align:center;display:none}
+.auth-msg{font-size:12px;color:#555;text-align:center;display:none}
+.auth-hint{font-size:11px;color:#888;text-align:center;margin-top:-8px}
+/* USER BADGE */
 .user-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px 3px 4px}
-.user-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
-.user-name{font-size:11px;font-weight:600;color:#fff;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* ACTIVITY LOG */
-.activity-panel{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.activity-hd{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:#FAFBFC}
-.activity-hd h3{font-size:12px;font-weight:700;color:var(--mid)}
-.activity-list{max-height:200px;overflow-y:auto}
-.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:11px}
-.activity-item:last-child{border-bottom:none}
-.activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
-.activity-body{flex:1;min-width:0;line-height:1.5}
-.activity-who{font-weight:700;color:var(--text)}
-.activity-what{color:var(--mid)}
-.activity-when{font-size:10px;color:var(--light);margin-top:1px}
-.activity-empty{padding:14px;text-align:center;font-size:11px;color:var(--light);font-style:italic}
-.auth-btn{display:flex;align-items:center;gap:10px;padding:11px 22px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text);transition:box-shadow .15s;width:100%;justify-content:center}
-.auth-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.auth-btn svg{flex-shrink:0}
-.auth-error{font-size:12px;color:var(--red);text-align:center;padding:8px 12px;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:6px;width:100%}
-.auth-loading{font-size:12px;color:var(--mid);text-align:center}
-
-/* USER BADGE in topbar */
-.user-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px 3px 4px;cursor:default}
-.user-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
-.user-name{font-size:11px;font-weight:600;color:#fff;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* ACTIVITY LOG */
-.activity-panel{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.activity-hd{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:#FAFBFC}
-.activity-hd h3{font-size:12px;font-weight:700;color:var(--mid)}
-.activity-list{max-height:200px;overflow-y:auto}
-.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:11px}
-.activity-item:last-child{border-bottom:none}
-.activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
-.activity-body{flex:1;min-width:0;line-height:1.5}
-.activity-who{font-weight:700;color:var(--text)}
-.activity-what{color:var(--mid)}
-.activity-when{font-size:10px;color:var(--light);margin-top:1px}
-.activity-empty{padding:14px;text-align:center;font-size:11px;color:var(--light);font-style:italic}
+.user-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.user-nm{font-size:11px;font-weight:600;color:#fff;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ACTIVITY */
+.act-panel{margin-top:14px;background:#fff;border:1px solid #DDE2EA;border-radius:10px;overflow:hidden}
+.act-hd{padding:9px 14px;border-bottom:1px solid #DDE2EA;background:#FAFBFC;font-size:12px;font-weight:700;color:#555}
+.act-list{max-height:180px;overflow-y:auto}
+.act-item{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;border-bottom:1px solid #DDE2EA;font-size:11px}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.act-body{flex:1;line-height:1.5}
+.act-who{font-weight:700;color:#1A1A1A}
+.act-what{color:#555}
+.act-when{font-size:10px;color:#888;margin-top:1px}
+.act-empty{padding:14px;text-align:center;font-size:11px;color:#888;font-style:italic}
 </style>
 </head>
 <body>
@@ -217,11 +192,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div id="user-badge-wrap" style="display:none">
       <div class="user-badge">
-        <div class="user-avatar" id="topbar-avatar">?</div>
-        <span class="user-name" id="topbar-name">...</span>
+        <div class="user-av" id="user-av"></div>
+        <span class="user-nm" id="user-nm"></span>
       </div>
     </div>
-    <button class="btn btn-ghost btn-sm" id="signout-btn" style="display:none" onclick="if(typeof signOut==='function')signOut()">Sign out</button>
+    <button class="btn btn-ghost btn-sm" id="signout-btn" style="display:none" onclick="authSignOut()">Sign out</button>
     <div class="dl-wrap" style="position:relative">
       <button class="btn btn-ghost btn-sm" onclick="toggleDlMenu()" id="dl-btn">⬇ Download ▾</button>
       <div id="dl-menu" style="display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #DDE2EA;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.15);z-index:200;min-width:160px;overflow:hidden">
@@ -235,19 +210,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
-<!-- AUTH SCREEN (shown until signed in) -->
-<div class="auth-screen" id="auth-screen">
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="auth-overlay">
   <div class="auth-card">
     <div class="auth-logo">Sootchy</div>
     <div class="auth-title">Roadmap Editor</div>
-    <div class="auth-sub">Sign in with your @sootchy.com Google account to access the roadmap tool.</div>
-    <div id="auth-error" style="display:none" class="auth-error"></div>
-    <div id="auth-loading" style="display:none" class="auth-loading">Signing you in...</div>
-    <button class="auth-btn" id="auth-google-btn" onclick="window.signInWithGoogle && window.signInWithGoogle()">
+    <div class="auth-sub">Sign in with your @sootchy.com Google account to continue.</div>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-msg" id="auth-msg">Signing you in...</div>
+    <button class="auth-google-btn" id="auth-btn" onclick="authSignIn()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Sign in with Google
     </button>
-    <div style="font-size:11px;color:var(--light);text-align:center">Access restricted to @sootchy.com accounts</div>
+    <div class="auth-hint">Access restricted to @sootchy.com accounts</div>
   </div>
 </div>
 
@@ -256,7 +231,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="main" id="main">
     <div id="canvas"><div class="empty">Select or create a roadmap.</div></div>
     <div id="detail-area"></div>
-    <div id="activity-area"></div>
+    <div id="act-area"></div>
   </div>
 </div>
 
@@ -268,166 +243,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div id="mc"></div>
 <input type="file" id="file-inp" accept=".json" style="display:none" onchange="onImport(event)">
 
-<!-- Shim: prevents ReferenceError before module loads -->
 <script>
-window.signInWithGoogle = function(){
-  var l=document.getElementById('auth-loading');
-  var e=document.getElementById('auth-error');
-  var b=document.getElementById('auth-google-btn');
-  if(l)l.style.display='block';
-  if(e)e.style.display='none';
-  if(b){b.disabled=true;b.style.opacity='.6';}
-};
-window.signOut = function(){};
-</script>
-
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, get, onValue, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC2Gdsm6aNIuzKeuhwu_bE-DOOTw3jrusA",
-  authDomain: "sootchy-roadmap.firebaseapp.com",
-  databaseURL: "https://sootchy-roadmap-default-rtdb.firebaseio.com",
-  projectId: "sootchy-roadmap",
-  storageBucket: "sootchy-roadmap.firebasestorage.app",
-  messagingSenderId: "546146548121",
-  appId: "1:546146548121:web:c57ae307076a096b767b08"
-};
-
-const ALLOWED_DOMAIN = 'sootchy.com';
-// Add specific allowed emails here if you want to allow non-sootchy.com addresses:
-const ALLOWED_EMAILS = [];
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-let currentUser = null;
-
-
-onAuthStateChanged(auth, user => {
-  if (user && (user.email.endsWith('@' + ALLOWED_DOMAIN) || ALLOWED_EMAILS.includes(user.email))) {
-    currentUser = user;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('user-badge-wrap').style.display = 'flex';
-    document.getElementById('signout-btn').style.display = 'inline-flex';
-    const av = document.getElementById('topbar-avatar');
-    const nm = document.getElementById('topbar-name');
-    if (av) { av.textContent = initials(user.displayName || user.email); av.style.background = avatarColor(user.displayName || user.email); }
-    if (nm) nm.textContent = (user.displayName || user.email).split(' ')[0];
-    initApp();
-  } else {
-    currentUser = null;
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('user-badge-wrap').style.display = 'none';
-    document.getElementById('signout-btn').style.display = 'none';
-  }
-});
-
-// ── FIREBASE DATA ─────────────────────────────────────────────────────────────
-async function saveToFirebase(roadmaps) {
-  await set(ref(db, 'roadmaps'), roadmaps);
-}
-async function loadFromFirebase() {
-  const snap = await get(ref(db, 'roadmaps'));
-  return snap.exists() ? snap.val() : {};
-}
-function subscribeToChanges(callback) {
-  onValue(ref(db, 'roadmaps'), snap => {
-    if (snap.exists()) callback(snap.val());
-  });
-}
-async function logActivity(action, roadmapName) {
-  if (!currentUser) return;
-  const entry = {
-    who: currentUser.displayName || currentUser.email,
-    email: currentUser.email,
-    action,
-    roadmap: roadmapName || '',
-    ts: Date.now()
-  };
-  await push(ref(db, 'activity'), entry);
-}
-function subscribeToActivity(callback) {
-  onValue(ref(db, 'activity'), snap => {
-    if (snap.exists()) {
-      const entries = Object.values(snap.val()).sort((a,b) => b.ts - a.ts).slice(0,50);
-      callback(entries);
-    } else callback([]);
-  });
-}
-
-// ── APP INIT ─────────────────────────────────────────────────────────────────
-async function initApp() {
-  state.roadmaps = await loadFromFirebase();
-  renderSelect();
-  const ids = Object.keys(state.roadmaps);
-  if (ids.length > 0) {
-    switchRoadmap(ids[0]);
-  } else {
-    document.getElementById('sidebar').innerHTML = '<div class="empty" style="padding:30px 16px;text-align:center;color:#888;font-size:13px">No roadmaps yet.<br><br>Click <strong>+ New</strong> to create your first roadmap.</div>';
-    document.getElementById('canvas').innerHTML = '<div class="empty" style="padding:60px 20px;text-align:center;color:#888;font-size:14px">No roadmaps yet — click <strong>+ New</strong> in the top bar to get started.</div>';
-  }
-
-  // Live sync — when another user saves, update this client
-  let isFirstLoad = true;
-  subscribeToChanges(remoteData => {
-    if (isFirstLoad) { isFirstLoad = false; return; }
-    const prevActiveId = state.activeId;
-    state.roadmaps = remoteData;
-    renderSelect();
-    if (prevActiveId && state.roadmaps[prevActiveId]) {
-      switchRoadmap(prevActiveId);
-    } else {
-      const ids = Object.keys(state.roadmaps);
-      if (ids.length > 0) switchRoadmap(ids[0]);
-    }
-    toast('Roadmap updated by another user', '#1B4F8A');
-  });
-
-  // Activity log subscription
-  subscribeToActivity(renderActivityLog);
-}
-
-// ── ACTIVITY LOG RENDER ───────────────────────────────────────────────────────
-function renderActivityLog(entries) {
-  const area = document.getElementById('activity-area');
-  if (!area) return;
-  const colors = { save:'#1A7A4A', create:'#1B4F8A', delete:'#C62828', import:'#B45309' };
-  let h = `<div class="activity-panel">
-    <div class="activity-hd"><h3>Activity Log</h3></div>
-    <div class="activity-list">`;
-  if (!entries || entries.length === 0) {
-    h += '<div class="activity-empty">No activity yet.</div>';
-  } else {
-    entries.forEach(e => {
-      const when = new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      const color = colors[e.action] || '#888';
-      h += `<div class="activity-item">
-        <div class="activity-dot" style="background:${color}"></div>
-        <div class="activity-body">
-          <span class="activity-who">${esc(e.who)}</span>
-          <span class="activity-what"> ${esc(actionLabel(e.action))} ${e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':''}</span>
-          <div class="activity-when">${when}</div>
-        </div>
-      </div>`;
-    });
-  }
-  h += '</div></div>';
-  area.innerHTML = h;
-}
-function actionLabel(a) {
-  return {save:'saved',create:'created',delete:'deleted',import:'imported'}[a] || a;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ALL EXISTING APP CODE BELOW — UNCHANGED
-// ══════════════════════════════════════════════════════════════════════════════
-
 const TYPES=[
   {id:'design',    label:'Product Design',       color:'#1A1A1A',tc:'#fff'},
   {id:'dev',       label:'Development',           color:'#1A7A4A',tc:'#fff'},
@@ -439,6 +255,7 @@ const TYPES=[
   {id:'research',  label:'Research',              color:'#6A1B9A',tc:'#fff'},
 ];
 const TM=Object.fromEntries(TYPES.map(t=>[t.id,t]));
+
 const STATUSES=[
   {id:'',          label:'No Status'},
   {id:'inprogress',label:'In Progress',color:'#F59E0B',dot:'#F59E0B'},
@@ -446,8 +263,11 @@ const STATUSES=[
   {id:'done',      label:'Done',       color:'#1A7A4A',dot:'#1A7A4A'},
 ];
 const SM=Object.fromEntries(STATUSES.map(s=>[s.id,s]));
+
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const QC=['#1B4F8A','#1B4F8A','#1B4F8A','#B45309','#B45309','#B45309','#1A7A4A','#1A7A4A','#1A7A4A','#6A1B9A','#6A1B9A','#6A1B9A'];
+
+// Avatar colour palette
 const AVATAR_COLORS=['#1B4F8A','#1A7A4A','#B45309','#6A1B9A','#C62828','#0F6E56','#185FA5','#3B6D11'];
 function avatarColor(name){let h=0;for(let c of(name||''))h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length;return AVATAR_COLORS[h];}
 function initials(name){if(!name)return '?';const p=name.trim().split(/\s+/);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():name.slice(0,2).toUpperCase();}
@@ -462,17 +282,49 @@ function dateToYM(s){if(!s)return null;const d=new Date(s+'T00:00:00');if(isNaN(
 function dateToQ(s){const ym=dateToYM(s);if(!ym)return null;return Math.floor(ym.m/3)}
 
 function defRm(name){
-  return {name,meta:{subtitle:'',version:fmtDate(new Date()),author:currentUser?currentUser.displayName||currentUser.email:'',approved:'TBD',footnote:'Timelines are rough targets. All matters are subject to discussion.'},
+  return {name,meta:{subtitle:'',version:fmtDate(new Date()),author:'',approved:'TBD',footnote:'Timelines are rough targets. All matters are subject to discussion.'},
     quarters:[{label:'Q1 · 2026',color:'#1B4F8A'},{label:'Q2 · 2026',color:'#B45309'},{label:'Q3 · 2026',color:'#1A7A4A'},{label:'Q4 · 2026',color:'#6A1B9A'}],
     months:buildDefaultMonths(),lanes:[]};
 }
 
+// Seed with assignees & blockers
 const SEED={};
 
 function save(){
-  saveToFirebase(state.roadmaps);
-  const rmName = state.activeId ? (state.roadmaps[state.activeId]?.name || '') : '';
-  logActivity('save', rmName);
+  if(!window._fbDB||!window._currentUser)return;
+  window._fbDB.ref('roadmaps').set(state.roadmaps);
+  var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
+  logAct('save',rmName);
+}
+function init(){
+  // Called after auth — load from Firebase
+  window._fbDB.ref('roadmaps').once('value').then(function(snap){
+    state.roadmaps=snap.exists()?snap.val():{};
+    renderSelect();
+    var ids=Object.keys(state.roadmaps);
+    if(ids.length>0){switchRoadmap(ids[0]);}
+    else{
+      document.getElementById('sidebar').innerHTML='<div class="empty" style="padding:30px 16px;text-align:center;color:#888;font-size:13px">No roadmaps yet.<br><br>Click <strong>+ New</strong> to create your first roadmap.</div>';
+      document.getElementById('canvas').innerHTML='<div class="empty" style="padding:60px 20px;text-align:center;color:#888;font-size:14px">No roadmaps yet — click <strong>+ New</strong> in the top bar to get started.</div>';
+    }
+    // Live sync
+    var isFirst=true;
+    window._fbDB.ref('roadmaps').on('value',function(s){
+      if(isFirst){isFirst=false;return;}
+      var prevId=state.activeId;
+      state.roadmaps=s.exists()?s.val():{};
+      renderSelect();
+      if(prevId&&state.roadmaps[prevId])switchRoadmap(prevId);
+      else{var ids2=Object.keys(state.roadmaps);if(ids2.length>0)switchRoadmap(ids2[0]);}
+      toast('Roadmap updated by another user','#1B4F8A');
+    });
+    // Activity log
+    window._fbDB.ref('activity').on('value',function(s){
+      if(!s.exists()){renderActLog([]);return;}
+      var entries=Object.values(s.val()).sort(function(a,b){return b.ts-a.ts;}).slice(0,50);
+      renderActLog(entries);
+    });
+  });
 }
 
 function toast(msg,color){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color||'#1A7A4A';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -482,7 +334,13 @@ function renderSelect(){
   Object.entries(state.roadmaps).forEach(([id,rm])=>{const o=document.createElement('option');o.value=id;o.textContent=rm.name;if(id===state.activeId)o.selected=true;sel.appendChild(o);});
 }
 function switchRoadmap(id){
-  state.activeId=id;state.selectedPill=null;renderSelect();renderSidebar();renderCanvas();renderDetail();showDelBtn();
+  state.activeId=id;
+  state.selectedPill=null;
+  renderSelect();
+  renderSidebar();
+  renderCanvas();
+  renderDetail();
+  showDelBtn();
 }
 function showDelBtn(){
   const btn=document.getElementById('del-rm-btn');
@@ -537,7 +395,7 @@ function renderSidebar(){
         </select></div>
         <div style="margin-top:3px">
           <div style="font-size:10px;font-weight:700;color:var(--mid);margin-bottom:3px">Blockers</div>
-          <div class="blocker-list">`;
+          <div class="blocker-list" id="bl-${li}-${pi}">`;
       (p.blockers||[]).forEach((b,bi)=>{
         h+=`<div class="blocker-row"><input value="${esc(b)}" placeholder="Describe blocker" oninput="setBlocker(${li},${pi},${bi},this.value)"><button class="del" onclick="delBlocker(${li},${pi},${bi})">✕</button></div>`;
       });
@@ -569,6 +427,7 @@ function pillHTML(p,maxW,li,pi){
   const hasAvatar=p.assignee;
   const statusLabels={inprogress:'IN PROGRESS',blocked:'BLOCKED',done:'DONE'};
   const sbLabel=statusLabels[p.status||''];
+  // Tooltip data on the WRAP so hovering dates/gap also triggers it
   const ttData=`data-tt="${esc(p.label)}|${esc(p.assignee||'')}|${esc(dateStr||'')}|${esc(p.status||'')}|${(p.blockers||[]).length}"`;
   let inner='';
   if(!narrow){
@@ -580,6 +439,7 @@ function pillHTML(p,maxW,li,pi){
     if(hasAvatar)inner+=`<span class="pill-avatar" style="background:rgba(255,255,255,.25);color:${t.tc};width:100%;justify-content:center">${initials(p.assignee)}</span>`;
     else if(hasDot)inner+=`<span class="s-dot" style="background:${s.dot};margin:auto"></span>`;
   }
+  // Tooltip + click on the WRAP — covers pill bar AND date text below it
   return `<div class="pill-wrap" style="cursor:pointer;width:${maxW}px;max-width:${maxW}px" ${ttData}
       onmouseenter="showTT(event,this)" onmouseleave="hideTT()" onclick="selectPill(${li},${pi})">
     <div class="pill" style="background:${t.color};color:${t.tc};width:100%;pointer-events:none${outline}">
@@ -631,11 +491,14 @@ function renderMonthly(rm){
     <div class="grid" style="grid-template-columns:${LW}px repeat(${nc},${CW}px)">
       <div class="qh-spacer"></div>`;
   cols.forEach(c=>h+=`<div class="qh-cell" style="background:${c.color};font-size:11px">${esc(c.label)}</div>`);
+
   rm.lanes.forEach((lane,li)=>{
     const par=li%2===0?'re':'ro';
+    // Build per-cell: items that START in each column
     const cellItems=Array.from({length:nc},()=>[]);
     (lane.pills||[]).forEach((p,pi)=>{
-      const start=dateToYM(p.startDate);const end=dateToYM(p.endDate);
+      const start=dateToYM(p.startDate);
+      const end=dateToYM(p.endDate);
       let startIdx=-1,endIdx=-1;
       if(start){cols.forEach((c,ci)=>{if(c.year===start.y&&c.month===start.m)startIdx=ci;});}
       if(end){cols.forEach((c,ci)=>{if(c.year===end.y&&c.month===end.m)endIdx=ci;});}
@@ -644,10 +507,14 @@ function renderMonthly(rm){
       endIdx=Math.min(endIdx,nc-1);
       cellItems[startIdx].push({p,pi,span:endIdx-startIdx+1});
     });
+
     h+=`<div class="ll-cell ${par}"><span class="ll-name">${esc(lane.name)}</span><span class="ll-desc">${esc(lane.desc||'')}</span></div>`;
     for(let c=0;c<nc;c++){
       h+=`<div class="dc-cell ${par}" style="overflow:visible">`;
-      cellItems[c].forEach(({p,pi,span})=>h+=pillHTML(p,CW*span-10,li,pi));
+      cellItems[c].forEach(({p,pi,span})=>{
+        const pillW=CW*span-10;
+        h+=pillHTML(p,pillW,li,pi);
+      });
       h+=`</div>`;
     }
   });
@@ -668,6 +535,7 @@ function legendHTML(){
   h+=`</div></div>`;return h;
 }
 
+/* ── TOOLTIP ── */
 function showTT(e,el){
   const raw=el.getAttribute('data-tt');if(!raw)return;
   const[label,assignee,dates,status,blockerCount]=raw.split('|');
@@ -692,11 +560,13 @@ function positionTT(e){
 function hideTT(){document.getElementById('tt').classList.remove('show');}
 document.addEventListener('mousemove',e=>{const tt=document.getElementById('tt');if(tt.classList.contains('show'))positionTT(e);});
 
+/* ── DETAIL PANEL ── */
 function selectPill(li,pi){
   const prev=state.selectedPill;
   if(prev&&prev.li===li&&prev.pi===pi){state.selectedPill=null;}
   else{state.selectedPill={li,pi};}
-  renderCanvas();renderDetail();
+  renderCanvas();
+  renderDetail();
 }
 
 function renderDetail(){
@@ -706,11 +576,13 @@ function renderDetail(){
   const{li,pi}=state.selectedPill;
   const lane=rm.lanes[li];if(!lane)return;
   const p=lane.pills[pi];if(!p)return;
+
   const t=TM[p.type]||{color:'#888',tc:'#fff'};
   const s=SM[p.status||''];
   const statusLabels={inprogress:'In Progress',blocked:'Blocked',done:'Done'};
   const dateStr=(p.startDate||p.endDate)?`${isoToDisp(p.startDate)}${p.endDate?' → '+isoToDisp(p.endDate):''}`:null;
   const blockers=p.blockers||[];
+
   let h=`<div class="detail-panel">
     <div class="detail-panel-hd">
       <h3 style="color:${t.color}">${esc(p.label)}</h3>
@@ -726,6 +598,7 @@ function renderDetail(){
   if(p.status)h+=`<div style="font-size:12px"><strong>Status:</strong> <span class="detail-badge" style="background:${s?s.dot+'22':'#eee'};color:${s?s.dot:'#555'}">${esc(statusLabels[p.status]||p.status)}</span></div>`;
   if(dateStr)h+=`<div style="font-size:12px"><strong>Duration:</strong> ${esc(dateStr)}</div>`;
   h+=`</div></div>`;
+
   if(p.assignee){
     const ac=avatarColor(p.assignee);
     h+=`<div style="margin-top:10px"><div class="detail-label">Assignee</div>
@@ -736,16 +609,20 @@ function renderDetail(){
   }
   h+=`</div><div class="detail-col">
       <div><div class="detail-label">Blockers ${blockers.length>0?`<span style="background:#ffebee;color:var(--red);padding:1px 6px;border-radius:10px;font-size:10px">${blockers.length}</span>`:''}</div>`;
+
   if(blockers.length===0){
     h+=`<div class="no-blockers">No blockers recorded for this item.</div>`;
   }else{
-    blockers.forEach(b=>{h+=`<div class="blocker-item"><span class="blocker-icon">⚠</span><span class="blocker-text">${esc(b)}</span></div>`;});
+    blockers.forEach(b=>{
+      h+=`<div class="blocker-item"><span class="blocker-icon">⚠</span><span class="blocker-text">${esc(b)}</span></div>`;
+    });
   }
   h+=`</div></div></div></div>`;
   area.innerHTML=h;
   area.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+/* ── MUTATIONS ── */
 function upd(k,v){const rm=state.roadmaps[state.activeId];rm[k]=v;renderSelect();renderCanvas();save();}
 function updm(k,v){state.roadmaps[state.activeId].meta[k]=v;renderCanvas();save();}
 function setCC(i,v){getCols()[i].color=v;renderCanvas();save();}
@@ -761,11 +638,7 @@ function delCol(i){
   renderSidebar();renderCanvas();save();
 }
 function addLane(){state.roadmaps[state.activeId].lanes.push({name:'New Lane',desc:'',pills:[]});renderSidebar();renderCanvas();save();}
-function delLane(li){
-  if(!confirm('Delete this lane and all its items?'))return;
-  state.roadmaps[state.activeId].lanes.splice(li,1);
-  state.selectedPill=null;renderSidebar();renderCanvas();renderDetail();save();
-}
+function delLane(li){if(!confirm('Delete this lane and all its items?'))return;state.roadmaps[state.activeId].lanes.splice(li,1);state.selectedPill=null;renderSidebar();renderCanvas();renderDetail();save();}
 function setLN(li,v){state.roadmaps[state.activeId].lanes[li].name=v;renderCanvas();save();}
 function setLD(li,v){state.roadmaps[state.activeId].lanes[li].desc=v;renderCanvas();save();}
 function addPill(li){
@@ -773,6 +646,7 @@ function addPill(li){
   renderSidebar();renderCanvas();save();
 }
 function delPill(li,pi){
+  state.roadmaps[state.activeId].lanes[li].pills.splice(li,pi);
   state.roadmaps[state.activeId].lanes[li].pills.splice(pi,1);
   if(state.selectedPill&&state.selectedPill.li===li&&state.selectedPill.pi===pi)state.selectedPill=null;
   renderSidebar();renderCanvas();renderDetail();save();
@@ -787,7 +661,8 @@ function setED(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].endDa
 function setAsgn(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].assignee=v;renderCanvas();save();}
 function addBlocker(li,pi){
   const p=state.roadmaps[state.activeId].lanes[li].pills[pi];
-  if(!p.blockers)p.blockers=[];p.blockers.push('');
+  if(!p.blockers)p.blockers=[];
+  p.blockers.push('');
   renderSidebar();save();
 }
 function setBlocker(li,pi,bi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].blockers[bi]=v;renderDetail();save();}
@@ -796,6 +671,7 @@ function delBlocker(li,pi,bi){
   renderSidebar();renderDetail();save();
 }
 
+/* ── ROADMAP CRUD ── */
 function showNewModal(){
   document.getElementById('mc').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal"><h3>New roadmap</h3><p>Name it after the product (e.g. "SLX", "Payroll", "CollegeWell")</p>
@@ -808,17 +684,13 @@ function closeModal(){document.getElementById('mc').innerHTML='';}
 function createRm(){
   const name=document.getElementById('nm-inp')?.value?.trim();if(!name)return;
   const id=genId();state.roadmaps[id]=defRm(name);
-  logActivity('create', name);
   save();closeModal();renderSelect();switchRoadmap(id);showDelBtn();toast('Roadmap created');
 }
 function deleteRoadmap(){
   const rm=state.roadmaps[state.activeId];
   if(!rm){toast('No roadmap selected','#C62828');return;}
   if(!confirm('Are you sure you want to delete "'+rm.name+'"?\nThis cannot be undone.'))return;
-  const name=rm.name;
-  delete state.roadmaps[state.activeId];
-  logActivity('delete', name);
-  save();
+  delete state.roadmaps[state.activeId];save();
   const ids=Object.keys(state.roadmaps);state.activeId=null;renderSelect();
   showDelBtn();
   if(ids.length>0)switchRoadmap(ids[0]);
@@ -829,7 +701,29 @@ function deleteRoadmap(){
   }
   toast('Roadmap deleted','#C62828');
 }
+function exportData(){
+  const blob=new Blob([JSON.stringify(state.roadmaps,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='sootchy_roadmaps_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Exported');
+}
+function importData(){document.getElementById('file-inp').click();}
+function onImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);const count=Object.keys(data).length;
+      if(!count)throw new Error();
+      if(!confirm(`Import ${count} roadmap(s)? Will merge with existing.`))return;
+      Object.assign(state.roadmaps,data);save();renderSelect();
+      const ids=Object.keys(state.roadmaps);if(ids.length)switchRoadmap(ids[0]);
+      toast(`Imported ${count} roadmap(s)`);
+    }catch{alert('Invalid file.');}
+  };
+  r.readAsText(file);e.target.value='';
+}
 
+/* ── DOWNLOAD MENU ── */
 function toggleDlMenu(){
   const m=document.getElementById('dl-menu');
   m.style.display=m.style.display==='none'?'block':'none';
@@ -854,7 +748,7 @@ async function downloadPNG(){
     toast('PNG downloaded');
   }catch(err){
     console.error(err);
-    alert('PNG export failed. Try SVG export instead.');
+    alert('PNG export failed. Try using browser Print → Save as PDF instead, or use the SVG export.');
   }
 }
 
@@ -874,12 +768,13 @@ async function downloadPDF(){
     toast('PDF downloaded');
   }catch(err){
     console.error(err);
-    alert('PDF export failed. Try browser Print → Save as PDF (Ctrl/Cmd+P).');
+    alert('PDF export failed. Try using browser Print → Save as PDF (Ctrl/Cmd+P) as an alternative.');
   }
 }
 
 function downloadSVG(){
   document.getElementById('dl-menu').style.display='none';
+  // Build a simple SVG representation of the current roadmap grid
   const rm=state.roadmaps[state.activeId];if(!rm){toast('No roadmap selected','#C62828');return;}
   const cols=state.view==='m'?rm.months:rm.quarters;
   const nc=cols.length;
@@ -888,21 +783,26 @@ function downloadSVG(){
   const H=HEAD_H+(rm.lanes.length*ROW_H)+PAD*2+60;
   let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="Arial,sans-serif">`;
   svg+=`<rect width="${W}" height="${H}" fill="#F0F2F5"/>`;
+  // Title
   svg+=`<text x="${PAD}" y="${PAD+18}" font-size="18" font-weight="bold" fill="#1B4F8A">${esc(rm.name)}</text>`;
   svg+=`<text x="${PAD}" y="${PAD+34}" font-size="11" fill="#555">${esc(rm.meta.subtitle)}</text>`;
   const gridY=PAD+50;
+  // Header cells
   svg+=`<rect x="${PAD}" y="${gridY}" width="${LW}" height="${HEAD_H}" fill="#FAFBFC" stroke="#DDE2EA" stroke-width="0.5"/>`;
   cols.forEach((c,i)=>{
     const x=PAD+LW+i*CW;
     svg+=`<rect x="${x}" y="${gridY}" width="${CW}" height="${HEAD_H}" fill="${c.color}" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>`;
     svg+=`<text x="${x+CW/2}" y="${gridY+HEAD_H/2+4}" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">${esc(c.label)}</text>`;
   });
+  // Lane rows
   rm.lanes.forEach((lane,li)=>{
     const y=gridY+HEAD_H+li*ROW_H;
     const rowFill=li%2===0?'#fff':'#F6F8FB';
+    // Lane label cell
     svg+=`<rect x="${PAD}" y="${y}" width="${LW}" height="${ROW_H}" fill="${rowFill}" stroke="#DDE2EA" stroke-width="0.5"/>`;
     svg+=`<text x="${PAD+10}" y="${y+16}" font-size="11" font-weight="bold" fill="#1A1A1A">${esc(lane.name)}</text>`;
     svg+=`<text x="${PAD+10}" y="${y+28}" font-size="9" fill="#888">${esc(lane.desc||'')} </text>`;
+    // Data cells + pills
     for(let c=0;c<nc;c++){
       const cx=PAD+LW+c*CW;
       svg+=`<rect x="${cx}" y="${y}" width="${CW}" height="${ROW_H}" fill="${rowFill}" stroke="#DDE2EA" stroke-width="0.5"/>`;
@@ -920,6 +820,7 @@ function downloadSVG(){
       svg+=`<text x="${px+8}" y="${py+15}" font-size="10" font-weight="600" fill="${t.tc||'#fff'}">${esc(lbl)}</text>`;
     });
   });
+  // Footer
   svg+=`<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="9" fill="#aaa" font-style="italic">${esc(rm.meta.footnote)}</text>`;
   svg+='</svg>';
   const blob=new Blob([svg],{type:'image/svg+xml'});
@@ -929,32 +830,115 @@ function downloadSVG(){
   a.click();toast('SVG downloaded');
 }
 
-function exportData(){
-  document.getElementById('dl-menu').style.display='none';
-  const blob=new Blob([JSON.stringify(state.roadmaps,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='sootchy_roadmaps_'+new Date().toISOString().slice(0,10)+'.json';a.click();
-  toast('Exported');
+/* ── AVATAR HELPERS ── */
+var AVCOLS=['#1B4F8A','#1A7A4A','#B45309','#6A1B9A','#C62828','#0F6E56','#185FA5','#3B6D11'];
+function avColor(n){var h=0;for(var i=0;i<(n||'').length;i++)h=(h*31+n.charCodeAt(i))%AVCOLS.length;return AVCOLS[h];}
+function avInitials(n){if(!n)return '?';var p=n.trim().split(/\s+/);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase();}
+
+/* ── ACTIVITY ── */
+function logAct(action,roadmap){
+  if(!window._currentUser||!window._fbDB)return;
+  window._fbDB.ref('activity').push({
+    who:window._currentUser.displayName||window._currentUser.email,
+    email:window._currentUser.email,
+    action:action,roadmap:roadmap||'',ts:Date.now()
+  });
 }
-function importData(){document.getElementById('file-inp').click();}
-function onImport(e){
-  const file=e.target.files[0];if(!file)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const data=JSON.parse(ev.target.result);const count=Object.keys(data).length;
-      if(!count)throw new Error();
-      if(!confirm(`Import ${count} roadmap(s)? Will merge with existing.`))return;
-      Object.assign(state.roadmaps,data);
-      logActivity('import','('+count+' roadmaps)');
-      save();renderSelect();
-      const ids=Object.keys(state.roadmaps);if(ids.length)switchRoadmap(ids[0]);
-      toast(`Imported ${count} roadmap(s)`);
-    }catch{alert('Invalid file.');}
-  };
-  r.readAsText(file);e.target.value='';
+function renderActLog(entries){
+  var area=document.getElementById('act-area');if(!area)return;
+  var colors={save:'#1A7A4A',create:'#1B4F8A',delete:'#C62828',import:'#B45309'};
+  var labels={save:'saved',create:'created',delete:'deleted',import:'imported'};
+  var h='<div class="act-panel"><div class="act-hd">Activity Log</div><div class="act-list">';
+  if(!entries||!entries.length){h+='<div class="act-empty">No activity yet.</div>';}
+  else entries.forEach(function(e){
+    var when=new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    h+='<div class="act-item"><div class="act-dot" style="background:'+(colors[e.action]||'#888')+'"></div><div class="act-body"><span class="act-who">'+esc(e.who)+'</span> <span class="act-what">'+(labels[e.action]||e.action)+' '+(e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':'')+'</span><div class="act-when">'+when+'</div></div></div>';
+  });
+  h+='</div></div>';
+  area.innerHTML=h;
 }
 
+/* ── AUTH FUNCTIONS (called from onclick — must be global) ── */
+function authSignIn(){
+  var btn=document.getElementById('auth-btn');
+  var msg=document.getElementById('auth-msg');
+  var err=document.getElementById('auth-err');
+  btn.disabled=true;
+  msg.style.display='block';msg.textContent='Opening Google sign-in...';
+  err.style.display='none';
+  var provider=new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).then(function(result){
+    var email=(result.user.email||'').toLowerCase();
+    if(!email.endsWith('@sootchy.com')){
+      return firebase.auth().signOut().then(function(){
+        btn.disabled=false;
+        msg.style.display='none';
+        err.style.display='block';
+        err.textContent='Access denied: '+result.user.email+' is not a @sootchy.com account.';
+      });
+    }
+    // success — onAuthStateChanged handles the rest
+  }).catch(function(e){
+    btn.disabled=false;
+    msg.style.display='none';
+    if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
+      err.style.display='block';
+      err.textContent='Sign-in failed: '+e.code;
+    }
+  });
+}
+function authSignOut(){
+  if(!confirm('Sign out?'))return;
+  firebase.auth().signOut();
+}
+
+
 </script>
+
+<!-- Firebase compat SDK (loaded as regular scripts — no module timing issues) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+var _fbConfig={
+  apiKey:"AIzaSyC2Gdsm6aNIuzKeuhwu_bE-DOOTw3jrusA",
+  authDomain:"sootchy-roadmap.firebaseapp.com",
+  databaseURL:"https://sootchy-roadmap-default-rtdb.firebaseio.com",
+  projectId:"sootchy-roadmap",
+  storageBucket:"sootchy-roadmap.firebasestorage.app",
+  messagingSenderId:"546146548121",
+  appId:"1:546146548121:web:c57ae307076a096b767b08"
+};
+firebase.initializeApp(_fbConfig);
+window._fbDB=firebase.database();
+
+firebase.auth().onAuthStateChanged(function(user){
+  var overlay=document.getElementById('auth-overlay');
+  var badgeWrap=document.getElementById('user-badge-wrap');
+  var signoutBtn=document.getElementById('signout-btn');
+  if(user&&user.email&&user.email.toLowerCase().endsWith('@sootchy.com')){
+    window._currentUser=user;
+    if(overlay)overlay.style.display='none';
+    if(badgeWrap)badgeWrap.style.display='flex';
+    if(signoutBtn)signoutBtn.style.display='inline-flex';
+    var av=document.getElementById('user-av');
+    var nm=document.getElementById('user-nm');
+    if(av){av.textContent=avInitials(user.displayName||user.email);av.style.background=avColor(user.displayName||user.email);}
+    if(nm)nm.textContent=(user.displayName||user.email).split(' ')[0];
+    init();
+  } else {
+    window._currentUser=null;
+    if(overlay)overlay.style.display='flex';
+    if(badgeWrap)badgeWrap.style.display='none';
+    if(signoutBtn)signoutBtn.style.display='none';
+    // Reset auth UI
+    var btn=document.getElementById('auth-btn');
+    var msg=document.getElementById('auth-msg');
+    if(btn){btn.disabled=false;}
+    if(msg)msg.style.display='none';
+  }
+});
+</script>
+
 </body>
 </html>
