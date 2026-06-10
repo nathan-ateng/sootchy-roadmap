@@ -197,6 +197,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" id="signout-btn" style="display:none" onclick="authSignOut()">Sign out</button>
+    <span id="dirty-ind" style="display:none;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.8);background:rgba(255,165,0,.25);padding:3px 9px;border-radius:6px;border:1px solid rgba(255,165,0,.4)">● Unsaved</span>
+    <button class="btn btn-ghost btn-sm" id="save-btn" onclick="_doSave()" style="display:none;background:rgba(26,122,74,.8);color:#fff">💾 Save</button>
+    <button class="btn btn-ghost btn-sm" id="cancel-btn" onclick="_doCancel()" style="display:none">✕ Cancel</button>
     <div class="dl-wrap" style="position:relative">
       <button class="btn btn-ghost btn-sm" onclick="toggleDlMenu()" id="dl-btn">⬇ Download ▾</button>
       <div id="dl-menu" style="display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #DDE2EA;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.15);z-index:200;min-width:160px;overflow:hidden">
@@ -271,6 +274,12 @@ const QC=['#1B4F8A','#1B4F8A','#1B4F8A','#B45309','#B45309','#B45309','#1A7A4A',
 const AVATAR_COLORS=['#1B4F8A','#1A7A4A','#B45309','#6A1B9A','#C62828','#0F6E56','#185FA5','#3B6D11'];
 function avatarColor(name){let h=0;for(let c of(name||''))h=(h*31+c.charCodeAt(0))%AVATAR_COLORS.length;return AVATAR_COLORS[h];}
 function initials(name){if(!name)return '?';const p=name.trim().split(/\s+/);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():name.slice(0,2).toUpperCase();}
+// Parse assignees: handles legacy string OR new comma-separated string
+function parseAssignees(val){
+  if(!val)return [];
+  if(Array.isArray(val))return val.filter(Boolean);
+  return val.split(',').map(s=>s.trim()).filter(Boolean);
+}
 
 let state={roadmaps:{},activeId:null,view:'q',selectedPill:null};
 
@@ -283,7 +292,7 @@ function dateToQ(s){const ym=dateToYM(s);if(!ym)return null;return Math.floor(ym
 
 function defRm(name){
   return {name,meta:{subtitle:'',version:fmtDate(new Date()),author:'',approved:'TBD',footnote:'Timelines are rough targets. All matters are subject to discussion.'},
-    quarters:[{label:'Q1 · 2026',color:'#1B4F8A'},{label:'Q2 · 2026',color:'#B45309'},{label:'Q3 · 2026',color:'#1A7A4A'},{label:'Q4 · 2026',color:'#6A1B9A'}],
+    quarters:[{label:'Q1 · 2026',color:'#2C5282'},{label:'Q2 · 2026',color:'#744210'},{label:'Q3 · 2026',color:'#276749'},{label:'Q4 · 2026',color:'#553C9A'}],
     months:buildDefaultMonths(),lanes:[]};
 }
 
@@ -303,6 +312,44 @@ function save(){
     });
     logAct('save',rmName);
   },600);
+}
+function _markDirty(){
+  if(!window._isDirty){
+    window._isDirty=true;
+    var ind=document.getElementById('dirty-ind');
+    if(ind){ind.style.display='inline-flex';}
+  }
+  renderCanvas();
+}
+function _doSave(){
+  if(!window._fbDB||!window._currentUser){toast('Not connected','#C62828');return;}
+  window._ownSaveCount=(window._ownSaveCount||0)+1;
+  var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
+  window._fbDB.ref('roadmaps').set(state.roadmaps).then(function(){
+    window._isDirty=false;
+    var ind=document.getElementById('dirty-ind');
+    if(ind)ind.style.display='none';
+    toast('Saved ✓','#1A7A4A');
+    logAct('save',rmName);
+  }).catch(function(e){
+    toast('Save failed: '+e.message,'#C62828');
+  });
+}
+function _doCancel(){
+  if(window._isDirty&&!confirm('Discard unsaved changes?'))return;
+  window._isDirty=false;
+  var ind=document.getElementById('dirty-ind');
+  if(ind)ind.style.display='none';
+  // Reload from Firebase
+  if(window._fbDB){
+    window._fbDB.ref('roadmaps').once('value').then(function(snap){
+      state.roadmaps=snap.exists()?snap.val():{};
+      renderSelect();
+      var ids=Object.keys(state.roadmaps);
+      if(ids.length>0)switchRoadmap(ids[0]);
+      toast('Changes discarded','#888');
+    });
+  }
 }
 function init(){
   // Called after auth — load from Firebase
@@ -397,7 +444,7 @@ function renderSidebar(){
         <div class="item-row"><label>Status</label><select onchange="setST(${li},${pi},this.value)">`;
       STATUSES.forEach(s=>h+=`<option value="${s.id}"${(p.status||'')=== s.id?' selected':''}>${s.label}</option>`);
       h+=`</select></div>
-        <div class="item-row"><label>Assignee</label><input type="text" value="${esc(p.assignee||'')}" placeholder="Name" oninput="setAsgn(${li},${pi},this.value)"></div>
+        <div class="item-row"><label>Assignees</label><input type="text" value="${esc(p.assignee||'')}" placeholder="Simi, Ade, Greatness" title="Comma-separated names" oninput="setAsgn(${li},${pi},this.value)"></div>
         <div class="item-row"><label>Start</label><input type="date" value="${p.startDate||''}" onchange="setSD(${li},${pi},this.value)"></div>
         <div class="item-row"><label>End</label><input type="date" value="${p.endDate||''}" onchange="setED(${li},${pi},this.value)"></div>
         <div class="item-row"><label>Col</label><select onchange="setPC(${li},${pi},this.value)">`;
@@ -438,23 +485,30 @@ function pillHTML(p,maxW,li,pi){
   const narrow=maxW<90;
   const dateStr=(p.startDate||p.endDate)?`${isoToDisp(p.startDate)}${p.endDate?' → '+isoToDisp(p.endDate):''}`:null;
   const hasDot=s&&s.dot;
-  const hasAvatar=p.assignee;
+  const assignees=parseAssignees(p.assignee);
+  const hasAvatar=assignees.length>0;
   const statusLabels={inprogress:'IN PROGRESS',blocked:'BLOCKED',done:'DONE'};
   const sbLabel=statusLabels[p.status||''];
-  // Tooltip data on the WRAP so hovering dates/gap also triggers it
-  const ttData=`data-tt="${esc(p.label)}|${esc(p.assignee||'')}|${esc(dateStr||'')}|${esc(p.status||'')}|${(p.blockers||[]).length}"`;
+  const ttAssignees=assignees.join(', ');
+  const ttData=`data-tt="${esc(p.label)}|${esc(ttAssignees)}|${esc(dateStr||'')}|${esc(p.status||'')}|${(p.blockers||[]).length}"`;
+  const avatarStack=(list,tc)=>{
+    const show=list.slice(0,3);
+    let av=show.map(n=>`<span class="pill-avatar" style="background:rgba(255,255,255,.28);color:${tc};margin-left:-3px;first-child:margin-left:0">${initials(n)}</span>`).join('');
+    if(list.length>3)av+=`<span class="pill-avatar" style="background:rgba(0,0,0,.2);color:${tc};margin-left:-3px">+${list.length-3}</span>`;
+    return av;
+  };
   let inner='';
   if(!narrow){
     inner+=`<span class="pill-label">${esc(p.label)}</span>`;
     if(sbLabel&&maxW>130)inner+=`<span class="sbadge" style="background:rgba(0,0,0,.2);color:${t.tc}">${sbLabel}</span>`;
     if(hasDot)inner+=`<span class="s-dot" style="background:${s.dot}"></span>`;
-    if(hasAvatar&&maxW>100)inner+=`<span class="pill-avatar" style="background:rgba(255,255,255,.25);color:${t.tc}">${initials(p.assignee)}</span>`;
+    if(hasAvatar&&maxW>100)inner+=`<span style="display:inline-flex;margin-left:2px">${avatarStack(assignees,t.tc)}</span>`;
   }else{
-    if(hasAvatar)inner+=`<span class="pill-avatar" style="background:rgba(255,255,255,.25);color:${t.tc};width:100%;justify-content:center">${initials(p.assignee)}</span>`;
+    if(hasAvatar)inner+=`<span style="display:inline-flex;width:100%;justify-content:center">${avatarStack(assignees,t.tc)}</span>`;
     else if(hasDot)inner+=`<span class="s-dot" style="background:${s.dot};margin:auto"></span>`;
   }
-  // Tooltip + click on the WRAP — covers pill bar AND date text below it
-  return `<div class="pill-wrap" style="cursor:pointer;width:${maxW}px;max-width:${maxW}px" ${ttData}
+    const doneStyle=p.status==='done'?';opacity:0.5;filter:grayscale(35%)':'';
+  return `<div class="pill-wrap" style="cursor:pointer;width:${maxW}px;max-width:${maxW}px${doneStyle}" ${ttData}
       onmouseenter="showTT(event,this)" onmouseleave="hideTT()" onclick="selectPill(${li},${pi})">
     <div class="pill" style="background:${t.color};color:${t.tc};width:100%;pointer-events:none${outline}">
       ${inner}
@@ -613,13 +667,14 @@ function renderDetail(){
   if(dateStr)h+=`<div style="font-size:12px"><strong>Duration:</strong> ${esc(dateStr)}</div>`;
   h+=`</div></div>`;
 
-  if(p.assignee){
-    const ac=avatarColor(p.assignee);
-    h+=`<div style="margin-top:10px"><div class="detail-label">Assignee</div>
-      <div class="detail-assignee">
-        <div class="detail-avatar" style="background:${ac}">${initials(p.assignee)}</div>
-        <div><div class="detail-info">${esc(p.assignee)}</div><div class="detail-sub">${esc(lane.name)}</div></div>
-      </div></div>`;
+  const detailAssignees=parseAssignees(p.assignee);
+  if(detailAssignees.length>0){
+    h+=`<div style="margin-top:10px"><div class="detail-label">Assignee${detailAssignees.length>1?'s':''}</div><div style="display:flex;flex-direction:column;gap:6px">`;
+    detailAssignees.forEach(name=>{
+      const ac=avatarColor(name);
+      h+=`<div class="detail-assignee"><div class="detail-avatar" style="background:${ac}">${initials(name)}</div><div><div class="detail-info">${esc(name)}</div><div class="detail-sub">${esc(lane.name)}</div></div></div>`;
+    });
+    h+=`</div></div>`;
   }
   h+=`</div><div class="detail-col">
       <div><div class="detail-label">Blockers ${blockers.length>0?`<span style="background:#ffebee;color:var(--red);padding:1px 6px;border-radius:10px;font-size:10px">${blockers.length}</span>`:''}</div>`;
@@ -637,13 +692,13 @@ function renderDetail(){
 }
 
 /* ── MUTATIONS ── */
-function upd(k,v){const rm=state.roadmaps[state.activeId];rm[k]=v;renderSelect();renderCanvas();save();}
-function updm(k,v){state.roadmaps[state.activeId].meta[k]=v;renderCanvas();save();}
-function setCC(i,v){getCols()[i].color=v;renderCanvas();save();}
-function setCL(i,v){getCols()[i].label=v;renderCanvas();save();}
+function upd(k,v){const rm=state.roadmaps[state.activeId];rm[k]=v;renderSelect();renderCanvas();_markDirty();}
+function updm(k,v){state.roadmaps[state.activeId].meta[k]=v;renderCanvas();_markDirty();}
+function setCC(i,v){getCols()[i].color=v;renderCanvas();_markDirty();}
+function setCL(i,v){getCols()[i].label=v;renderCanvas();_markDirty();}
 function addCol(){
   const list=getCols();const n=list.length;
-  list.push(state.view==='m'?{label:MONTHS[n%12]+' 2026',color:QC[n%12],year:new Date().getFullYear(),month:n%12}:{label:`Q${n+1} · 2026`,color:'#555'});
+  list.push(state.view==='m'?{label:MONTHS[n%12]+' 2026',color:QC[n%12],year:new Date().getFullYear(),month:n%12}:{label:`Q${n+1} · 2026`,color:'#4A5568'});
   renderSidebar();renderCanvas();save();
 }
 function delCol(i){
@@ -653,8 +708,8 @@ function delCol(i){
 }
 function addLane(){state.roadmaps[state.activeId].lanes.push({name:'New Lane',desc:'',pills:[]});renderSidebar();renderCanvas();save();}
 function delLane(li){if(!confirm('Delete this lane and all its items?'))return;state.roadmaps[state.activeId].lanes.splice(li,1);state.selectedPill=null;renderSidebar();renderCanvas();renderDetail();save();}
-function setLN(li,v){state.roadmaps[state.activeId].lanes[li].name=v;renderCanvas();save();}
-function setLD(li,v){state.roadmaps[state.activeId].lanes[li].desc=v;renderCanvas();save();}
+function setLN(li,v){state.roadmaps[state.activeId].lanes[li].name=v;renderCanvas();_markDirty();}
+function setLD(li,v){state.roadmaps[state.activeId].lanes[li].desc=v;renderCanvas();_markDirty();}
 function addPill(li){
   state.roadmaps[state.activeId].lanes[li].pills.push({label:'New item',col:0,type:'dev',status:'',startDate:'',endDate:'',assignee:'',blockers:[],span:1});
   renderSidebar();renderCanvas();save();
@@ -665,21 +720,21 @@ function delPill(li,pi){
   if(state.selectedPill&&state.selectedPill.li===li&&state.selectedPill.pi===pi)state.selectedPill=null;
   renderSidebar();renderCanvas();renderDetail();save();
 }
-function setPL(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].label=v;renderCanvas();save();}
-function setPC(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].col=parseInt(v);renderCanvas();save();}
-function setPT(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].type=v;renderCanvas();save();}
-function setPS(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].span=parseInt(v);renderCanvas();save();}
-function setST(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].status=v;renderCanvas();save();}
-function setSD(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].startDate=v;renderCanvas();save();}
-function setED(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].endDate=v;renderCanvas();save();}
-function setAsgn(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].assignee=v;renderCanvas();save();}
+function setPL(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].label=v;renderCanvas();_markDirty();}
+function setPC(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].col=parseInt(v);renderCanvas();_markDirty();}
+function setPT(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].type=v;renderCanvas();_markDirty();}
+function setPS(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].span=parseInt(v);renderCanvas();_markDirty();}
+function setST(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].status=v;renderCanvas();_markDirty();}
+function setSD(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].startDate=v;renderCanvas();_markDirty();}
+function setED(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].endDate=v;renderCanvas();_markDirty();}
+function setAsgn(li,pi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].assignee=v;renderCanvas();_markDirty();}
 function addBlocker(li,pi){
   const p=state.roadmaps[state.activeId].lanes[li].pills[pi];
   if(!p.blockers)p.blockers=[];
   p.blockers.push('');
   renderSidebar();save();
 }
-function setBlocker(li,pi,bi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].blockers[bi]=v;renderDetail();save();}
+function setBlocker(li,pi,bi,v){state.roadmaps[state.activeId].lanes[li].pills[pi].blockers[bi]=v;renderDetail();_markDirty();}
 function delBlocker(li,pi,bi){
   state.roadmaps[state.activeId].lanes[li].pills[pi].blockers.splice(bi,1);
   renderSidebar();renderDetail();save();
@@ -987,6 +1042,10 @@ firebase.auth().onAuthStateChanged(function(user){
     if(overlay)overlay.style.display='none';
     if(badgeWrap)badgeWrap.style.display='flex';
     if(signoutBtn)signoutBtn.style.display='inline-flex';
+    var saveBtn=document.getElementById('save-btn');
+    var cancelBtn=document.getElementById('cancel-btn');
+    if(saveBtn)saveBtn.style.display='inline-flex';
+    if(cancelBtn)cancelBtn.style.display='inline-flex';
     var av=document.getElementById('user-av');
     var nm=document.getElementById('user-nm');
     if(av){av.textContent=avInitials(user.displayName||user.email);av.style.background=avColor(user.displayName||user.email);}
@@ -997,6 +1056,13 @@ firebase.auth().onAuthStateChanged(function(user){
     if(overlay)overlay.style.display='flex';
     if(badgeWrap)badgeWrap.style.display='none';
     if(signoutBtn)signoutBtn.style.display='none';
+    var saveBtn2=document.getElementById('save-btn');
+    var cancelBtn2=document.getElementById('cancel-btn');
+    var dirtyInd=document.getElementById('dirty-ind');
+    if(saveBtn2)saveBtn2.style.display='none';
+    if(cancelBtn2)cancelBtn2.style.display='none';
+    if(dirtyInd)dirtyInd.style.display='none';
+    window._isDirty=false;
     // Reset auth UI
     var btn=document.getElementById('auth-btn');
     var msg=document.getElementById('auth-msg');
