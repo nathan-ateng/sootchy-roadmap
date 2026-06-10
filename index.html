@@ -207,6 +207,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="importData()">⬆ Upload JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="openLogs()">📋 Logs</button>
   </div>
 </div>
 
@@ -231,7 +232,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="main" id="main">
     <div id="canvas"><div class="empty">Select or create a roadmap.</div></div>
     <div id="detail-area"></div>
-    <div id="act-area"></div>
   </div>
 </div>
 
@@ -292,7 +292,11 @@ const SEED={};
 
 function save(){
   if(!window._fbDB||!window._currentUser)return;
-  window._fbDB.ref('roadmaps').set(state.roadmaps);
+  window._ownSave=true; // flag so live sync ignores this write
+  window._fbDB.ref('roadmaps').set(state.roadmaps).catch(function(e){
+    console.error('Firebase save error:',e);
+    toast('Save failed: '+e.message,'#C62828');
+  });
   var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
   logAct('save',rmName);
 }
@@ -309,14 +313,16 @@ function init(){
     }
     // Live sync
     var isFirst=true;
+    window._ownSave=false;
     window._fbDB.ref('roadmaps').on('value',function(s){
       if(isFirst){isFirst=false;return;}
+      if(window._ownSave){window._ownSave=false;return;} // skip our own saves
       var prevId=state.activeId;
       state.roadmaps=s.exists()?s.val():{};
       renderSelect();
       if(prevId&&state.roadmaps[prevId])switchRoadmap(prevId);
       else{var ids2=Object.keys(state.roadmaps);if(ids2.length>0)switchRoadmap(ids2[0]);}
-      toast('Roadmap updated by another user','#1B4F8A');
+      toast('Roadmap updated by a team member','#1B4F8A');
     });
     // Activity log
     window._fbDB.ref('activity').on('value',function(s){
@@ -844,18 +850,39 @@ function logAct(action,roadmap){
     action:action,roadmap:roadmap||'',ts:Date.now()
   });
 }
+var _actEntries=[];
 function renderActLog(entries){
-  var area=document.getElementById('act-area');if(!area)return;
+  _actEntries=entries||[];
+  // Update modal body if open
+  var body=document.getElementById('logs-modal-body');
+  if(body)_renderActBody(body);
+}
+function _renderActBody(container){
   var colors={save:'#1A7A4A',create:'#1B4F8A',delete:'#C62828',import:'#B45309'};
   var labels={save:'saved',create:'created',delete:'deleted',import:'imported'};
-  var h='<div class="act-panel"><div class="act-hd">Activity Log</div><div class="act-list">';
-  if(!entries||!entries.length){h+='<div class="act-empty">No activity yet.</div>';}
-  else entries.forEach(function(e){
+  if(!_actEntries||!_actEntries.length){
+    container.innerHTML='<div style="padding:24px;text-align:center;font-size:12px;color:#888;font-style:italic">No activity yet.</div>';
+    return;
+  }
+  var h='';
+  _actEntries.forEach(function(e){
     var when=new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-    h+='<div class="act-item"><div class="act-dot" style="background:'+(colors[e.action]||'#888')+'"></div><div class="act-body"><span class="act-who">'+esc(e.who)+'</span> <span class="act-what">'+(labels[e.action]||e.action)+' '+(e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':'')+'</span><div class="act-when">'+when+'</div></div></div>';
+    var col=colors[e.action]||'#888';
+    var lbl=labels[e.action]||e.action;
+    h+='<div class="act-item"><div class="act-dot" style="background:'+col+'"></div><div class="act-body"><span class="act-who">'+esc(e.who)+'</span> <span class="act-what">'+lbl+' '+(e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':'')+'</span><div class="act-when">'+when+'</div></div></div>';
   });
-  h+='</div></div>';
-  area.innerHTML=h;
+  container.innerHTML=h;
+}
+function openLogs(){
+  var modal=document.getElementById('logs-modal-bg');
+  var body=document.getElementById('logs-modal-body');
+  if(!modal||!body)return;
+  _renderActBody(body);
+  modal.style.display='flex';
+}
+function closeLogs(){
+  var modal=document.getElementById('logs-modal-bg');
+  if(modal)modal.style.display='none';
 }
 
 /* ── AUTH FUNCTIONS (called from onclick — must be global) ── */
@@ -940,5 +967,16 @@ firebase.auth().onAuthStateChanged(function(user){
 });
 </script>
 
+
+<!-- LOGS MODAL -->
+<div id="logs-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center" onclick="if(event.target===this)closeLogs()">
+  <div style="background:#fff;border-radius:12px;width:560px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #DDE2EA">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #DDE2EA;background:#FAFBFC">
+      <span style="font-size:14px;font-weight:700;color:#1A1A1A">Activity Log</span>
+      <button class="btn btn-neutral btn-sm" onclick="closeLogs()">Close ✕</button>
+    </div>
+    <div id="logs-modal-body" style="overflow-y:auto;flex:1;padding:0"></div>
+  </div>
+</div>
 </body>
 </html>
