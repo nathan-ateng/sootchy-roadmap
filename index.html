@@ -290,15 +290,19 @@ function defRm(name){
 // Seed with assignees & blockers
 const SEED={};
 
+var _saveTimer=null;
 function save(){
   if(!window._fbDB||!window._currentUser)return;
-  window._ownSave=true; // flag so live sync ignores this write
-  window._fbDB.ref('roadmaps').set(state.roadmaps).catch(function(e){
-    console.error('Firebase save error:',e);
-    toast('Save failed: '+e.message,'#C62828');
-  });
-  var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
-  logAct('save',rmName);
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(function(){
+    window._ownSaveCount=(window._ownSaveCount||0)+1;
+    var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
+    window._fbDB.ref('roadmaps').set(state.roadmaps).catch(function(e){
+      console.error('Firebase save error:',e);
+      toast('Save failed — check your connection','#C62828');
+    });
+    logAct('save',rmName);
+  },600);
 }
 function init(){
   // Called after auth — load from Firebase
@@ -313,10 +317,10 @@ function init(){
     }
     // Live sync
     var isFirst=true;
-    window._ownSave=false;
+    window._ownSaveCount=0;
     window._fbDB.ref('roadmaps').on('value',function(s){
       if(isFirst){isFirst=false;return;}
-      if(window._ownSave){window._ownSave=false;return;} // skip our own saves
+      if(window._ownSaveCount>0){window._ownSaveCount--;return;}
       var prevId=state.activeId;
       state.roadmaps=s.exists()?s.val():{};
       renderSelect();
@@ -330,6 +334,10 @@ function init(){
       var entries=Object.values(s.val()).sort(function(a,b){return b.ts-a.ts;}).slice(0,50);
       renderActLog(entries);
     });
+  }).catch(function(e){
+    console.error('DB load error:',e);
+    var el=document.getElementById('canvas');
+    if(el)el.innerHTML='<div class="empty" style="padding:60px 20px;text-align:center;color:#C62828;font-size:13px">Failed to load roadmaps. Please refresh the page.</div>';
   });
 }
 
@@ -690,13 +698,30 @@ function closeModal(){document.getElementById('mc').innerHTML='';}
 function createRm(){
   const name=document.getElementById('nm-inp')?.value?.trim();if(!name)return;
   const id=genId();state.roadmaps[id]=defRm(name);
+  // Log create immediately (don't wait for debounced save)
+  if(window._fbDB&&window._currentUser){
+    window._fbDB.ref('activity').push({
+      who:window._currentUser.displayName||window._currentUser.email,
+      email:window._currentUser.email,
+      action:'create',roadmap:name,ts:Date.now()
+    });
+  }
   save();closeModal();renderSelect();switchRoadmap(id);showDelBtn();toast('Roadmap created');
 }
 function deleteRoadmap(){
   const rm=state.roadmaps[state.activeId];
   if(!rm){toast('No roadmap selected','#C62828');return;}
   if(!confirm('Are you sure you want to delete "'+rm.name+'"?\nThis cannot be undone.'))return;
-  delete state.roadmaps[state.activeId];save();
+  var delName=rm.name;
+  delete state.roadmaps[state.activeId];
+  if(window._fbDB&&window._currentUser){
+    window._fbDB.ref('activity').push({
+      who:window._currentUser.displayName||window._currentUser.email,
+      email:window._currentUser.email,
+      action:'delete',roadmap:delName,ts:Date.now()
+    });
+  }
+  save();
   const ids=Object.keys(state.roadmaps);state.activeId=null;renderSelect();
   showDelBtn();
   if(ids.length>0)switchRoadmap(ids[0]);
@@ -853,9 +878,10 @@ function logAct(action,roadmap){
 var _actEntries=[];
 function renderActLog(entries){
   _actEntries=entries||[];
-  // Update modal body if open
+  // Always update modal body so it's fresh when opened
   var body=document.getElementById('logs-modal-body');
-  if(body)_renderActBody(body);
+  var modal=document.getElementById('logs-modal-bg');
+  if(body&&modal&&modal.style.display!=='none')_renderActBody(body);
 }
 function _renderActBody(container){
   var colors={save:'#1A7A4A',create:'#1B4F8A',delete:'#C62828',import:'#B45309'};
@@ -877,8 +903,21 @@ function openLogs(){
   var modal=document.getElementById('logs-modal-bg');
   var body=document.getElementById('logs-modal-body');
   if(!modal||!body)return;
-  _renderActBody(body);
   modal.style.display='flex';
+  // Show loading state
+  body.innerHTML='<div style="padding:24px;text-align:center;font-size:12px;color:#888">Loading...</div>';
+  // Fresh read from Firebase
+  if(window._fbDB){
+    window._fbDB.ref('activity').once('value').then(function(s){
+      if(!s.exists()){renderActLog([]);return;}
+      var entries=Object.values(s.val()).sort(function(a,b){return b.ts-a.ts;}).slice(0,100);
+      renderActLog(entries);
+    }).catch(function(){
+      _renderActBody(body); // fall back to cached entries
+    });
+  } else {
+    _renderActBody(body);
+  }
 }
 function closeLogs(){
   var modal=document.getElementById('logs-modal-bg');
