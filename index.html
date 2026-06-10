@@ -197,9 +197,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" id="signout-btn" style="display:none" onclick="authSignOut()">Sign out</button>
-    <span id="dirty-ind" style="display:none;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.8);background:rgba(255,165,0,.25);padding:3px 9px;border-radius:6px;border:1px solid rgba(255,165,0,.4)">● Unsaved</span>
-    <button class="btn btn-ghost btn-sm" id="save-btn" onclick="_doSave()" style="display:none;background:rgba(26,122,74,.8);color:#fff">💾 Save</button>
-    <button class="btn btn-ghost btn-sm" id="cancel-btn" onclick="_doCancel()" style="display:none">✕ Cancel</button>
     <div class="dl-wrap" style="position:relative">
       <button class="btn btn-ghost btn-sm" onclick="toggleDlMenu()" id="dl-btn">⬇ Download ▾</button>
       <div id="dl-menu" style="display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #DDE2EA;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.15);z-index:200;min-width:160px;overflow:hidden">
@@ -314,11 +311,6 @@ function save(){
   },600);
 }
 function _markDirty(){
-  if(!window._isDirty){
-    window._isDirty=true;
-    var ind=document.getElementById('dirty-ind');
-    if(ind){ind.style.display='inline-flex';}
-  }
   renderCanvas();
 }
 function _doSave(){
@@ -355,6 +347,21 @@ function init(){
   // Called after auth — load from Firebase
   window._fbDB.ref('roadmaps').once('value').then(function(snap){
     state.roadmaps=snap.exists()?snap.val():{};
+    // Firebase converts [] to null — normalize all arrays
+    Object.values(state.roadmaps).forEach(function(rm){
+      if(!rm.lanes||!Array.isArray(rm.lanes))rm.lanes=[];
+      rm.lanes.forEach(function(lane){
+        if(!lane.pills||!Array.isArray(lane.pills))lane.pills=[];
+        lane.pills.forEach(function(p){
+          if(!p.blockers||!Array.isArray(p.blockers))p.blockers=[];
+          if(!p.quarters||!Array.isArray(p.quarters)){}
+        });
+      });
+      if(!rm.quarters||!Array.isArray(rm.quarters))rm.quarters=[
+        {label:'Q1 · 2026',color:'#2C5282'},{label:'Q2 · 2026',color:'#744210'},
+        {label:'Q3 · 2026',color:'#276749'},{label:'Q4 · 2026',color:'#553C9A'}];
+      if(!rm.months||!Array.isArray(rm.months))rm.months=buildDefaultMonths();
+    });
     renderSelect();
     var ids=Object.keys(state.roadmaps);
     if(ids.length>0){switchRoadmap(ids[0]);}
@@ -395,6 +402,7 @@ function renderSelect(){
   Object.entries(state.roadmaps).forEach(([id,rm])=>{const o=document.createElement('option');o.value=id;o.textContent=rm.name;if(id===state.activeId)o.selected=true;sel.appendChild(o);});
 }
 function switchRoadmap(id){
+  _clearDraftsForRoadmap();
   state.activeId=id;
   state.selectedPill=null;
   renderSelect();
@@ -412,6 +420,72 @@ function setView(v){state.view=v;document.getElementById('vt-q').classList.toggl
 function getCols(){const rm=state.roadmaps[state.activeId];return state.view==='m'?rm.months:rm.quarters;}
 
 /* ── SIDEBAR ── */
+/* ── PER-ITEM DRAFT SYSTEM ── */
+var _itemDrafts={}; // key: "li-pi", value: draft pill object
+
+function _draftKey(li,pi){return li+'-'+pi;}
+
+function _getDraft(li,pi){
+  var key=_draftKey(li,pi);
+  if(!_itemDrafts[key]){
+    // Initialize draft from current state
+    var rm=state.roadmaps[state.activeId];
+    if(rm&&rm.lanes&&rm.lanes[li]&&rm.lanes[li].pills&&rm.lanes[li].pills[pi]){
+      _itemDrafts[key]=JSON.parse(JSON.stringify(rm.lanes[li].pills[pi]));
+    }
+  }
+  return _itemDrafts[key];
+}
+
+function _setDraftField(li,pi,field,val){
+  var draft=_getDraft(li,pi);
+  if(draft)draft[field]=val;
+  // Re-render just the canvas to preview changes
+  renderCanvas();
+}
+
+function _saveItem(li,pi){
+  var key=_draftKey(li,pi);
+  var draft=_itemDrafts[key];
+  if(!draft)return;
+  var rm=state.roadmaps[state.activeId];
+  if(!rm||!rm.lanes||!rm.lanes[li]||!rm.lanes[li].pills)return;
+  // Commit draft to state
+  rm.lanes[li].pills[pi]=JSON.parse(JSON.stringify(draft));
+  delete _itemDrafts[key];
+  save();
+  renderSidebar();
+  toast('Item saved','#1A7A4A');
+}
+
+function _cancelItem(li,pi){
+  var key=_draftKey(li,pi);
+  delete _itemDrafts[key];
+  renderSidebar();
+  renderCanvas();
+}
+
+function _setDraftBlocker(li,pi,bi,val){
+  var draft=_getDraft(li,pi);
+  if(draft){
+    if(!draft.blockers)draft.blockers=[];
+    draft.blockers[bi]=val;
+  }
+}
+function _addDraftBlocker(li,pi){
+  var draft=_getDraft(li,pi);
+  if(draft){if(!draft.blockers)draft.blockers=[];draft.blockers.push('');}
+  renderSidebar();
+}
+function _delDraftBlocker(li,pi,bi){
+  var draft=_getDraft(li,pi);
+  if(draft&&draft.blockers)draft.blockers.splice(bi,1);
+  renderSidebar();
+}
+function _clearDraftsForRoadmap(){
+  _itemDrafts={};
+}
+
 function renderSidebar(){
   const rm=state.roadmaps[state.activeId];
   if(!rm){document.getElementById('sidebar').innerHTML='<div class="empty">No roadmap selected.</div>';return;}
@@ -430,26 +504,27 @@ function renderSidebar(){
   cols.forEach((c,i)=>{h+=`<div class="col-row"><input type="color" value="${c.color}" oninput="setCC(${i},this.value)"><input type="text" value="${esc(c.label)}" oninput="setCL(${i},this.value)"><button class="del" onclick="delCol(${i})">✕</button></div>`;});
   h+=`</div></div>`;
   h+=`<div class="sb-sec"><div class="sb-hd">Swim Lanes <button class="btn btn-neutral btn-sm" onclick="addLane()">+ Lane</button></div><div class="lane-list">`;
-  rm.lanes.forEach((lane,li)=>{
+  (rm.lanes||[]).forEach((lane,li)=>{
     h+=`<div class="lane-card"><div class="lane-hd"><input value="${esc(lane.name)}" placeholder="Lane name" oninput="setLN(${li},this.value)"><button class="del" onclick="delLane(${li})">✕</button></div>
       <input class="lane-desc-inp" value="${esc(lane.desc||'')}" placeholder="Description" oninput="setLD(${li},this.value)">
       <div class="lane-items">`;
-    lane.pills.forEach((p,pi)=>{
+    (lane.pills||[]).forEach((origP,pi)=>{
+      var p=_getDraft(li,pi)||origP;
       const nc=cols.length;
       h+=`<div class="item-card">
-        <div class="item-card-top"><input type="text" value="${esc(p.label)}" placeholder="Item label" oninput="setPL(${li},${pi},this.value)"><button class="del" onclick="delPill(${li},${pi})">✕</button></div>
-        <div class="item-row"><label>Type</label><select onchange="setPT(${li},${pi},this.value)">`;
+        <div class="item-card-top"><input type="text" value="${esc(p.label)}" placeholder="Item label" oninput="_setDraftField(${li},${pi},'label',this.value)"><button class="del" onclick="delPill(${li},${pi})">✕</button></div>
+        <div class="item-row"><label>Type</label><select onchange="_setDraftField(${li},${pi},'type',this.value)">`;
       TYPES.forEach(t=>h+=`<option value="${t.id}"${p.type===t.id?' selected':''}>${t.label}</option>`);
       h+=`</select></div>
-        <div class="item-row"><label>Status</label><select onchange="setST(${li},${pi},this.value)">`;
+        <div class="item-row"><label>Status</label><select onchange="_setDraftField(${li},${pi},'status',this.value)">`;
       STATUSES.forEach(s=>h+=`<option value="${s.id}"${(p.status||'')=== s.id?' selected':''}>${s.label}</option>`);
       h+=`</select></div>
-        <div class="item-row"><label>Assignees</label><input type="text" value="${esc(p.assignee||'')}" placeholder="Simi, Ade, Greatness" title="Comma-separated names" oninput="setAsgn(${li},${pi},this.value)"></div>
-        <div class="item-row"><label>Start</label><input type="date" value="${p.startDate||''}" onchange="setSD(${li},${pi},this.value)"></div>
-        <div class="item-row"><label>End</label><input type="date" value="${p.endDate||''}" onchange="setED(${li},${pi},this.value)"></div>
-        <div class="item-row"><label>Col</label><select onchange="setPC(${li},${pi},this.value)">`;
+        <div class="item-row"><label>Assignees</label><input type="text" value="${esc(p.assignee||'')}" placeholder="Simi, Ade, Greatness" title="Comma-separated names" oninput="_setDraftField(${li},${pi},'assignee',this.value)"></div>
+        <div class="item-row"><label>Start</label><input type="date" value="${p.startDate||''}" onchange="_setDraftField(${li},${pi},'startDate',this.value)"></div>
+        <div class="item-row"><label>End</label><input type="date" value="${p.endDate||''}" onchange="_setDraftField(${li},${pi},'endDate',this.value)"></div>
+        <div class="item-row"><label>Col</label><select onchange="_setDraftField(${li},${pi},'col',parseInt(this.value))">`;
       for(let c=0;c<nc;c++)h+=`<option value="${c}"${p.col===c?' selected':''}>Col ${c+1}</option>`;
-      h+=`</select><label style="margin-left:4px">Span</label><select onchange="setPS(${li},${pi},this.value)">
+      h+=`</select><label style="margin-left:4px">Span</label><select onchange="_setDraftField(${li},${pi},'span',parseInt(this.value))">
           <option value="1"${(p.span||1)===1?' selected':''}>×1</option>
           <option value="2"${(p.span||1)===2?' selected':''}>×2</option>
           <option value="3"${(p.span||1)===3?' selected':''}>×3</option>
@@ -458,11 +533,16 @@ function renderSidebar(){
           <div style="font-size:10px;font-weight:700;color:var(--mid);margin-bottom:3px">Blockers</div>
           <div class="blocker-list" id="bl-${li}-${pi}">`;
       (p.blockers||[]).forEach((b,bi)=>{
-        h+=`<div class="blocker-row"><input value="${esc(b)}" placeholder="Describe blocker" oninput="setBlocker(${li},${pi},${bi},this.value)"><button class="del" onclick="delBlocker(${li},${pi},${bi})">✕</button></div>`;
+        h+=`<div class="blocker-row"><input value="${esc(b)}" placeholder="Describe blocker" oninput="_setDraftBlocker(${li},${pi},${bi},this.value)"><button class="del" onclick="_delDraftBlocker(${li},${pi},${bi})">✕</button></div>`;
       });
-      h+=`</div><button class="add-blocker" onclick="addBlocker(${li},${pi})">+ Add blocker</button>
+      h+=`</div>
+          <button class="add-blocker" onclick="_addDraftBlocker(${li},${pi})">+ Add blocker</button>
         </div>
-      </div>`;
+        <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <button class="btn btn-blue btn-sm" style="flex:1;font-size:11px;padding:5px;background:#1A7A4A;color:#fff;border-radius:5px" onclick="_saveItem(${li},${pi})">💾 Save item</button>
+          <button class="btn btn-neutral btn-sm" style="flex:1;font-size:11px;padding:5px" onclick="_cancelItem(${li},${pi})">✕ Cancel</button>
+        </div>
+      </div>\`;
     });
     h+=`<div class="add-item" onclick="addPill(${li})">＋ Add item</div></div></div>`;
   });
@@ -478,6 +558,9 @@ function renderCanvas(){
 }
 
 function pillHTML(p,maxW,li,pi){
+  // Use draft if exists (shows preview of unsaved edits on canvas)
+  const dp=_itemDrafts&&_itemDrafts[_draftKey(li,pi)];
+  if(dp)p=dp;
   const t=TM[p.type]||{color:'#888',tc:'#fff'};
   const s=SM[p.status||''];
   const isSelected=state.selectedPill&&state.selectedPill.li===li&&state.selectedPill.pi===pi;
@@ -527,9 +610,10 @@ function renderQuarterly(rm){
     <div class="grid" style="grid-template-columns:${LW}px repeat(${nc},${CW}px)">
       <div class="qh-spacer"></div>`;
   cols.forEach(c=>h+=`<div class="qh-cell" style="background:${c.color}">${esc(c.label)}</div>`);
-  rm.lanes.forEach((lane,li)=>{
+  (rm.lanes||[]).forEach((lane,li)=>{
     const cm={};for(let c=0;c<nc;c++)cm[c]=[];
-    (lane.pills||[]).forEach((p,pi)=>{
+    (lane.pills||[]).forEach((origP,pi)=>{
+      var p=_getDraft(li,pi)||origP;
       let col=p.col||0;
       if(p.startDate){const q=dateToQ(p.startDate);if(q!==null&&q<nc)col=q;}
       cm[Math.min(Math.max(col,0),nc-1)].push({p,pi});
@@ -560,11 +644,12 @@ function renderMonthly(rm){
       <div class="qh-spacer"></div>`;
   cols.forEach(c=>h+=`<div class="qh-cell" style="background:${c.color};font-size:11px">${esc(c.label)}</div>`);
 
-  rm.lanes.forEach((lane,li)=>{
+  (rm.lanes||[]).forEach((lane,li)=>{
     const par=li%2===0?'re':'ro';
     // Build per-cell: items that START in each column
     const cellItems=Array.from({length:nc},()=>[]);
-    (lane.pills||[]).forEach((p,pi)=>{
+    (lane.pills||[]).forEach((origP,pi)=>{
+      var p=_getDraft(li,pi)||origP;
       const start=dateToYM(p.startDate);
       const end=dateToYM(p.endDate);
       let startIdx=-1,endIdx=-1;
@@ -706,12 +791,20 @@ function delCol(i){
   state.roadmaps[state.activeId].lanes.forEach(l=>l.pills.forEach(p=>{if(p.col>=list.length)p.col=Math.max(0,list.length-1);}));
   renderSidebar();renderCanvas();save();
 }
-function addLane(){state.roadmaps[state.activeId].lanes.push({name:'New Lane',desc:'',pills:[]});renderSidebar();renderCanvas();save();}
+function addLane(){
+  var rm=state.roadmaps[state.activeId];if(!rm)return;
+  if(!rm.lanes||!Array.isArray(rm.lanes))rm.lanes=[];
+  rm.lanes.push({name:'New Lane',desc:'',pills:[]});
+  renderSidebar();renderCanvas();save();
+}
 function delLane(li){if(!confirm('Delete this lane and all its items?'))return;state.roadmaps[state.activeId].lanes.splice(li,1);state.selectedPill=null;renderSidebar();renderCanvas();renderDetail();save();}
 function setLN(li,v){state.roadmaps[state.activeId].lanes[li].name=v;renderCanvas();_markDirty();}
 function setLD(li,v){state.roadmaps[state.activeId].lanes[li].desc=v;renderCanvas();_markDirty();}
 function addPill(li){
-  state.roadmaps[state.activeId].lanes[li].pills.push({label:'New item',col:0,type:'dev',status:'',startDate:'',endDate:'',assignee:'',blockers:[],span:1});
+  var rm=state.roadmaps[state.activeId];if(!rm)return;
+  var lane=rm.lanes&&rm.lanes[li];if(!lane)return;
+  if(!lane.pills||!Array.isArray(lane.pills))lane.pills=[];
+  lane.pills.push({label:'New item',col:0,type:'dev',status:'',startDate:'',endDate:'',assignee:'',blockers:[],span:1});
   renderSidebar();renderCanvas();save();
 }
 function delPill(li,pi){
@@ -881,7 +974,7 @@ function downloadSVG(){
     svg+=`<text x="${x+CW/2}" y="${gridY+HEAD_H/2+4}" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">${esc(c.label)}</text>`;
   });
   // Lane rows
-  rm.lanes.forEach((lane,li)=>{
+  (rm.lanes||[]).forEach((lane,li)=>{
     const y=gridY+HEAD_H+li*ROW_H;
     const rowFill=li%2===0?'#fff':'#F6F8FB';
     // Lane label cell
@@ -1042,10 +1135,7 @@ firebase.auth().onAuthStateChanged(function(user){
     if(overlay)overlay.style.display='none';
     if(badgeWrap)badgeWrap.style.display='flex';
     if(signoutBtn)signoutBtn.style.display='inline-flex';
-    var saveBtn=document.getElementById('save-btn');
-    var cancelBtn=document.getElementById('cancel-btn');
-    if(saveBtn)saveBtn.style.display='inline-flex';
-    if(cancelBtn)cancelBtn.style.display='inline-flex';
+
     var av=document.getElementById('user-av');
     var nm=document.getElementById('user-nm');
     if(av){av.textContent=avInitials(user.displayName||user.email);av.style.background=avColor(user.displayName||user.email);}
@@ -1056,12 +1146,6 @@ firebase.auth().onAuthStateChanged(function(user){
     if(overlay)overlay.style.display='flex';
     if(badgeWrap)badgeWrap.style.display='none';
     if(signoutBtn)signoutBtn.style.display='none';
-    var saveBtn2=document.getElementById('save-btn');
-    var cancelBtn2=document.getElementById('cancel-btn');
-    var dirtyInd=document.getElementById('dirty-ind');
-    if(saveBtn2)saveBtn2.style.display='none';
-    if(cancelBtn2)cancelBtn2.style.display='none';
-    if(dirtyInd)dirtyInd.style.display='none';
     window._isDirty=false;
     // Reset auth UI
     var btn=document.getElementById('auth-btn');
