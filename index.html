@@ -145,6 +145,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .toast{position:fixed;bottom:16px;right:16px;background:var(--green);color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
 .toast.show{opacity:1}
 .empty{padding:60px 20px;text-align:center;color:var(--light);font-size:13px}
+.collapse-btn{background:none;border:none;cursor:pointer;padding:2px 5px;color:var(--mid);font-size:11px;line-height:1;border-radius:3px;margin-left:auto;flex-shrink:0;opacity:.7;transition:opacity .15s}
+.collapse-btn:hover{opacity:1;background:var(--hover)}
+.sb-hd{display:flex;align-items:center;gap:6px}
 
 /* ── AUTH ── */
 .auth-overlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999}
@@ -422,6 +425,23 @@ function setView(v){state.view=v;document.getElementById('vt-q').classList.toggl
 function getCols(){const rm=state.roadmaps[state.activeId];return state.view==='m'?rm.months:rm.quarters;}
 
 /* ── SIDEBAR ── */
+/* ── COLLAPSE STATE ── */
+var _collapsed={};
+function _loadCollapsed(){
+  try{var s=sessionStorage.getItem('sootchy_collapsed');if(s)_collapsed=JSON.parse(s);}catch(e){}
+}
+function _saveCollapsed(){
+  try{sessionStorage.setItem('sootchy_collapsed',JSON.stringify(_collapsed));}catch(e){}
+}
+function _toggleSection(key){
+  _collapsed[key]=!_collapsed[key];
+  _saveCollapsed();
+  renderSidebar();
+}
+function _isCollapsed(key){return !!_collapsed[key];}
+// Load on startup
+_loadCollapsed();
+
 /* ── PER-ITEM DRAFT SYSTEM ── */
 var _itemDrafts={}; // key: "li-pi", value: draft pill object
 
@@ -495,8 +515,8 @@ function renderSidebar(){
   if(!rm){document.getElementById('sidebar').innerHTML='<div class="empty">No roadmap selected.</div>';return;}
   const cols=getCols();const colLabel=state.view==='m'?'Months':'Quarters';
   let h='';
-  h+=`<div class="sb-sec"><div class="sb-hd">Page Info</div>
-    <div class="meta-fields">
+  h+=`<div class="sb-sec"><div class="sb-hd"><span>Page Info</span><button class="collapse-btn" onclick="_toggleSection('pageinfo')">${_isCollapsed("pageinfo")?"▶":"▼"}</button></div>
+    <div class="meta-fields" style="display:${_isCollapsed("pageinfo")?"none":"flex"}">
       <div class="fl"><label>Roadmap Name</label><input value="${esc(rm.name)}" oninput="upd('name',this.value)"></div>
       <div class="fl"><label>Subtitle</label><input value="${esc(rm.meta.subtitle)}" oninput="updm('subtitle',this.value)"></div>
       <div class="fl"><label>Version / Date</label><input value="${esc(rm.meta.version)}" oninput="updm('version',this.value)"></div>
@@ -504,19 +524,20 @@ function renderSidebar(){
       <div class="fl"><label>Leadership Approved</label><input value="${esc(rm.meta.approved)}" oninput="updm('approved',this.value)"></div>
       <div class="fl"><label>Footnote</label><input value="${esc(rm.meta.footnote)}" oninput="updm('footnote',this.value)"></div>
     </div></div>`;
-  h+=`<div class="sb-sec"><div class="sb-hd">${colLabel} <button class="btn btn-neutral btn-sm" onclick="addCol()">+ Add</button></div><div class="col-list">`;
+  h+=`<div class="sb-sec"><div class="sb-hd"><span>${colLabel}</span><button class="btn btn-neutral btn-sm" onclick="addCol()" style="display:${_isCollapsed("quarters")?"none":"inline-flex"}">+ Add</button><button class="collapse-btn" onclick="_toggleSection('quarters')">${_isCollapsed("quarters")?"▶":"▼"}</button></div><div class="col-list" style="display:${_isCollapsed("quarters")?"none":"block"}">`;
   cols.forEach((c,i)=>{h+=`<div class="col-row"><input type="color" value="${c.color}" oninput="setCC(${i},this.value)"><input type="text" value="${esc(c.label)}" oninput="setCL(${i},this.value)"><button class="del" onclick="delCol(${i})">✕</button></div>`;});
   h+=`</div></div>`;
-  h+=`<div class="sb-sec"><div class="sb-hd">Swim Lanes <button class="btn btn-neutral btn-sm" onclick="addLane()">+ Lane</button></div><div class="lane-list">`;
+  h+=`<div class="sb-sec"><div class="sb-hd"><span>Swim Lanes</span><button class="btn btn-neutral btn-sm" onclick="addLane()" style="display:${_isCollapsed("lanes")?"none":"inline-flex"}">+ Lane</button><button class="collapse-btn" onclick="_toggleSection('lanes')">${_isCollapsed("lanes")?"▶":"▼"}</button></div><div class="lane-list" style="display:${_isCollapsed("lanes")?"none":"block"}">`;
   (rm.lanes||[]).forEach((lane,li)=>{
-    h+=`<div class="lane-card"><div class="lane-hd"><input value="${esc(lane.name)}" placeholder="Lane name" oninput="setLN(${li},this.value)"><button class="del" onclick="delLane(${li})">✕</button></div>
-      <input class="lane-desc-inp" value="${esc(lane.desc||'')}" placeholder="Description" oninput="setLD(${li},this.value)">
+    h+=`<div class="lane-card"><div class="lane-hd"><input value="${esc(lane.name)}" placeholder="Lane name" oninput="setLN(${li},this.value)"><button class="collapse-btn" onclick="_toggleSection('lane-${li}')" style="font-size:10px">${_isCollapsed("lane-"+li)?"▶":"▼"}</button><button class="del" onclick="delLane(${li})">✕</button></div>
+      <div style="display:${_isCollapsed("lane-"+li)?"none":"block"}"><input class="lane-desc-inp" value="${esc(lane.desc||'')}" placeholder="Description" oninput="setLD(${li},this.value)">
       <div class="lane-items">`;
     (lane.pills||[]).forEach((origP,pi)=>{
       var p=_getDraft(li,pi)||origP;
       const nc=cols.length;
       h+=`<div class="item-card">
-        <div class="item-card-top"><input type="text" value="${esc(p.label)}" placeholder="Item label" oninput="_setDraftField(${li},${pi},'label',this.value)"><button class="del" onclick="delPill(${li},${pi})">✕</button></div>
+        <div class="item-card-top"><input type="text" value="${esc(p.label)}" placeholder="Item label" oninput="_setDraftField(${li},${pi},'label',this.value)"><button class="collapse-btn" onclick="_toggleSection('item-${li}-${pi}')" style="font-size:10px">${_isCollapsed("item-"+li+"-"+pi)?"▶":"▼"}</button><button class="del" onclick="delPill(${li},${pi})">✕</button></div>
+        <div style="display:${_isCollapsed('item-'+li+'-'+pi)?'none':'block'}">
         <div class="item-row"><label>Type</label><select onchange="_setDraftField(${li},${pi},'type',this.value)">`;
       TYPES.forEach(t=>h+=`<option value="${t.id}"${p.type===t.id?' selected':''}>${t.label}</option>`);
       h+=`</select></div>
@@ -542,13 +563,14 @@ function renderSidebar(){
       h+=`</div>
           <button class="add-blocker" onclick="_addDraftBlocker(${li},${pi})">+ Add blocker</button>
         </div>
+        </div>
         <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           <button class="btn btn-blue btn-sm" style="flex:1;font-size:11px;padding:5px;background:#1A7A4A;color:#fff;border-radius:5px" onclick="_saveItem(${li},${pi})">💾 Save item</button>
           <button class="btn btn-neutral btn-sm" style="flex:1;font-size:11px;padding:5px" onclick="_cancelItem(${li},${pi})">✕ Cancel</button>
         </div>
       </div>`;
     });
-    h+=`<div class="add-item" onclick="addPill(${li})">＋ Add item</div></div></div>`;
+    h+=`<div class="add-item" onclick="addPill(${li})" style="display:${_isCollapsed("lane-"+li)?"none":"flex"}">＋ Add item</div></div></div></div>`;
   });
   h+=`</div></div>`;
   document.getElementById('sidebar').innerHTML=h;
@@ -939,8 +961,14 @@ async function downloadPDF(){
   document.getElementById('dl-menu').style.display='none';
   toast('Preparing PDF...','#1B4F8A');
   try{
+    // jsPDF loaded via script tag — access from window.jspdf
+    const jsPDF=window.jspdf&&window.jspdf.jsPDF;
+    if(!jsPDF){
+      alert('PDF library not loaded yet. Please wait a moment and try again.');
+      toast('PDF library not ready','#C62828');
+      return;
+    }
     const{default:html2canvas}=await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.min.js');
-    const jsPDF=(await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js')).jsPDF;
     const el=getCanvasEl();
     const cvs=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#F0F2F5',logging:false});
     const imgData=cvs.toDataURL('image/png');
@@ -950,8 +978,8 @@ async function downloadPDF(){
     pdf.save('sootchy_roadmap_'+name+'_'+new Date().toISOString().slice(0,10)+'.pdf');
     toast('PDF downloaded');
   }catch(err){
-    console.error(err);
-    alert('PDF export failed. Try using browser Print → Save as PDF (Ctrl/Cmd+P) as an alternative.');
+    console.error('PDF error:',err);
+    toast('PDF failed — try Download → SVG instead','#C62828');
   }
 }
 
@@ -1140,6 +1168,9 @@ function authSignOut(){
 
 
 </script>
+
+<!-- jsPDF loaded as script tag for reliable UMD access -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- Firebase compat SDK (loaded as regular scripts — no module timing issues) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
