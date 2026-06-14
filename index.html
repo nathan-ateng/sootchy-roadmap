@@ -46,6 +46,14 @@ body{font-family:var(--font);background:var(--canvas);color:var(--text);height:1
 
 /* LAYOUT */
 .layout{display:flex;flex:1;overflow:hidden;min-width:0}
+.detail-drawer{width:0;min-width:0;background:var(--canvas);overflow:hidden;flex-shrink:0;transition:width .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:none}
+.detail-drawer.open{width:340px;min-width:340px;border-left:1px solid var(--border)}
+.drawer-inner{width:340px;overflow-y:auto;flex:1;padding:0}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--canvas);flex-shrink:0;position:sticky;top:0;z-index:2}
+.drawer-header-title{font-size:13px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+.drawer-header-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.drawer-close-btn{background:none;border:none;cursor:pointer;color:var(--mid);font-size:16px;padding:2px 6px;border-radius:4px;line-height:1;transition:all .15s;font-family:var(--font)}
+.drawer-close-btn:hover{background:var(--offset);color:var(--text)}
 .sidebar{width:268px;background:var(--canvas);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;font-size:12px;transition:width .25s ease,opacity .2s ease;position:relative}
 .sidebar.hidden{width:0!important;min-width:0!important;overflow:hidden;opacity:0;border-right:none!important;padding:0!important;flex-shrink:0}
 .sidebar.hidden{width:0;min-width:0;overflow:hidden;border-right:none}
@@ -122,14 +130,14 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
 .ro{background:#F6F8FB}
 /* Row-based layout for non-overlapping pills */
 .pill-row{display:flex;flex-direction:column;gap:2px;min-height:28px;position:relative}
-.pill-wrap{display:inline-flex;flex-direction:column;gap:0;margin-bottom:2px;position:relative;z-index:3;cursor:grab;touch-action:none}
+.pill-wrap{display:inline-flex;flex-direction:column;gap:0;margin-bottom:2px;position:relative;z-index:3;cursor:grab;touch-action:none;align-items:flex-start}
 .pill-wrap[style*="position:absolute"]{cursor:grab}
 .pill-wrap:active{cursor:grabbing}
 .pill-wrap.dragging{opacity:.4}
 .dc-cell.drag-over{background:rgba(27,79,138,.08)!important;outline:2px dashed var(--blue)}
-.pill{border-radius:var(--th-pill-radius);padding:3px 7px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;min-height:24px;max-width:100%}
+.pill{border-radius:var(--th-pill-radius);padding:4px 7px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;min-height:22px;max-width:100%}
 .pill-label{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;max-width:100%}
-.pill-dates{font-size:9px;color:var(--mid);padding-left:2px;white-space:nowrap;margin-top:2px;display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:14px;height:14px}
+.pill-dates{font-size:9px;color:var(--mid);padding-left:3px;white-space:nowrap;margin-top:1px;display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:13px;height:13px}
 .sbadge{font-size:9px;padding:1px 4px;border-radius:3px;white-space:nowrap}
 .s-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .pill-avatar{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0}
@@ -173,20 +181,6 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
 /* ── SIDEBAR TOGGLE IN TOPBAR ── */
 .sb-toggle-topbar{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 9px;color:var(--mid);font-size:14px;cursor:pointer;flex-shrink:0;line-height:1;transition:all .15s;display:flex;align-items:center;justify-content:center;width:32px;height:32px}
 .sb-toggle-topbar:hover{background:var(--offset);color:var(--text)}
-.auth-overlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999}
-.auth-card{background:#fff;border:1px solid #DDE2EA;border-radius:16px;padding:40px 44px;width:360px;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-.auth-logo{font-size:26px;font-weight:800;color:#1A7A4A;letter-spacing:-.5px}
-.auth-title{font-size:16px;font-weight:700;color:#1A1A1A;text-align:center;margin-top:-6px}
-.auth-sub{font-size:12px;color:#555;text-align:center;line-height:1.6;margin-top:-10px}
-.auth-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px;background:#fff;border:1px solid #DDE2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);color:#1A1A1A;transition:box-shadow .15s}
-.auth-google-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.12)}
-.auth-google-btn:disabled{opacity:.5;cursor:not-allowed}
-.auth-err{width:100%;padding:8px 12px;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:6px;font-size:12px;color:#C62828;text-align:center;display:none}
-.auth-msg{font-size:12px;color:#555;text-align:center;display:none}
-.auth-hint{font-size:11px;color:#888;text-align:center;margin-top:-8px}
-.user-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--offset);border-radius:20px;border:1px solid var(--border)}
-.user-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
-.user-nm{font-size:12px;font-weight:600;color:var(--text)}
 
 /* ── NEW ITEM INLINE FORM ── */
 .add-item-form{background:var(--accent-light);border:1px solid #BFDBFE;border-radius:8px;padding:10px;margin-top:4px}
@@ -198,12 +192,12 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
 .add-item-cancel{flex:1;background:#fff;border:1px solid var(--border);border-radius:4px;padding:6px;font-size:11px;cursor:pointer;font-family:var(--font);color:var(--mid)}
 
 /* ── DETAIL PANEL ── */
-.detail-panel-wrap{background:var(--canvas);border-top:1px solid var(--border);padding:0}
+.detail-panel-wrap{background:var(--canvas);padding:0;height:100%}
 .detail-panel{padding:16px 18px}
 .detail-panel-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px}
 .detail-panel-hd h3{font-size:16px;font-weight:700;flex:1}
 .detail-panel-actions{display:flex;gap:7px;align-items:center;flex-shrink:0}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:16px}
+.detail-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px}
 .detail-field{display:flex;flex-direction:column;gap:3px}
 .detail-field-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--light)}
 .detail-field-val{font-size:13px;color:var(--text)}
@@ -215,6 +209,28 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
 
 /* ── BLOCKERS IN DETAIL PANEL ── */
 .blocker-section{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.deliv-section{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.deliv-section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.deliv-section-title{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mid)}
+.deliv-done-count{background:#D1FAE5;color:#065F46;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700}
+.deliv-add-btn{background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--accent);font-family:var(--font);padding:2px 6px;border-radius:4px;transition:all .15s}
+.deliv-add-btn:hover{background:var(--accent-light)}
+.deliv-empty{font-size:12px;color:var(--light);font-style:italic;padding:4px 0}
+.deliv-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border)}
+.deliv-row:last-child{border-bottom:none}
+.deliv-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border-strong);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff;font-size:10px;line-height:1}
+.deliv-check.checked{background:#1A7A4A;border-color:#1A7A4A;color:#fff}
+.deliv-text-view{font-size:12px;color:var(--text);flex:1;line-height:1.4}
+.deliv-text-view.done{text-decoration:line-through;color:var(--light)}
+.deliv-text-input{flex:1;border:none;border-bottom:1px solid transparent;background:transparent;font-size:12px;font-family:var(--font);color:var(--text);padding:0;outline:none;line-height:1.4}
+.deliv-text-input:focus{border-bottom-color:var(--accent)}
+.deliv-del-btn{background:none;border:none;cursor:pointer;color:var(--light);font-size:11px;padding:2px 5px;border-radius:3px;transition:all .15s;font-family:var(--font);flex-shrink:0}
+.deliv-del-btn:hover{background:#FEE2E2;color:var(--red)}
+.deliv-add-form{display:flex;gap:6px;padding:6px 0;align-items:center}
+.deliv-add-input{flex:1;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;font-family:var(--font);color:var(--text);background:#FAFBFC}
+.deliv-add-input:focus{outline:none;border-color:var(--accent);background:#fff}
+.deliv-add-confirm{background:#1A7A4A;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.deliv-add-cancel{background:#F9FAFB;border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:11px;color:var(--mid);cursor:pointer;font-family:var(--font)}
 .blocker-section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .blocker-section-title{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mid)}
 .blocker-open-count{background:#FEE2E2;color:#991B1B;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700}
@@ -287,6 +303,22 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
 /* Pointer drag styles */
 .ll-cell.drag-target{border-left:3px solid #1A7A4A!important;background:#E8F5EE!important}
 .pill-wrap{touch-action:none!important} /* pointer events on touch */
+
+/* ── AUTH + USER BADGE ── */
+.auth-overlay{position:fixed;inset:0;background:#F0F2F5;display:flex;align-items:center;justify-content:center;z-index:9999}
+.auth-card{background:#fff;border:1px solid #DDE2EA;border-radius:16px;padding:40px 44px;width:360px;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.auth-logo{font-size:26px;font-weight:800;color:#1A7A4A;letter-spacing:-.5px}
+.auth-title{font-size:16px;font-weight:700;color:#1A1A1A;text-align:center;margin-top:-6px}
+.auth-sub{font-size:12px;color:#555;text-align:center;line-height:1.6;margin-top:-10px}
+.auth-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px;background:#fff;border:1px solid #DDE2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);color:#1A1A1A;transition:box-shadow .15s}
+.auth-google-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.auth-google-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{width:100%;padding:8px 12px;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:6px;font-size:12px;color:#C62828;text-align:center;display:none}
+.auth-msg{font-size:12px;color:#555;text-align:center;display:none}
+.auth-hint{font-size:11px;color:#888;text-align:center;margin-top:-8px}
+.user-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--offset);border-radius:20px;border:1px solid var(--border)}
+.user-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.user-nm{font-size:12px;font-weight:600;color:var(--text)}
 </style>
 </head>
 <body>
@@ -299,7 +331,7 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
     <div class="auth-title">Roadmap Editor</div>
     <div class="auth-sub">Sign in with your @sootchy.com Google account to continue.</div>
     <div class="auth-err" id="auth-err"></div>
-    <div class="auth-msg" id="auth-msg">Signing you in...</div>
+    <div class="auth-msg" id="auth-msg"></div>
     <button class="auth-google-btn" id="auth-btn" onclick="authSignIn()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Sign in with Google
@@ -374,10 +406,7 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
       <button id="vt-m" onclick="setView('m')">Monthly</button>
     </div>
     <div id="user-badge-wrap" style="display:none">
-      <div class="user-badge">
-        <div class="user-av" id="user-av"></div>
-        <span class="user-nm" id="user-nm"></span>
-      </div>
+      <div class="user-badge"><div class="user-av" id="user-av"></div><span class="user-nm" id="user-nm"></span></div>
     </div>
     <button id="signout-btn" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--mid)" onclick="authSignOut()">Sign out</button>
   </div>
@@ -388,7 +417,9 @@ input[type=text]:focus,input[type=date]:focus,select:focus{outline:none;border-c
   <div class="sidebar" id="sidebar"></div>
   <div class="canvas-wrap">
     <div id="canvas"></div>
-    <div id="detail-area"></div>
+  </div>
+  <div class="detail-drawer" id="detail-drawer">
+    <div class="drawer-inner" id="detail-area"></div>
   </div>
 </div>
 
@@ -473,15 +504,17 @@ let TYPES=[
 ];
 let TM=()=>Object.fromEntries(TYPES.map(t=>[t.id,t]));
 // Status colors — mutable
-let STATUS_COLORS={inprogress:'#F59E0B',blocked:'#C62828',done:'#1A7A4A'};
+let STATUS_COLORS={inprogress:'#F59E0B',blocked:'#C62828',done:'#1A7A4A',notstarted:'#9CA3AF'};
 function getStatusDot(id){
   if(id==='inprogress')return STATUS_COLORS.inprogress;
   if(id==='blocked')return STATUS_COLORS.blocked;
   if(id==='done')return STATUS_COLORS.done;
+  if(id==='notstarted')return STATUS_COLORS.notstarted;
   return '#888';
 }
 const STATUSES=[
   {id:'',label:'No Status'},
+  {id:'notstarted',label:'Not Started'},
   {id:'inprogress',label:'In Progress'},
   {id:'blocked',label:'Blocked'},
   {id:'done',label:'Done'},
@@ -509,14 +542,11 @@ function dateToQOffset(s){
   return daysIntoQ/91; // approx 91 days per quarter, returns 0..1
 }
 function buildDefaultMonths(){const yr=new Date().getFullYear();return Array.from({length:12},(_,i)=>({label:MONTHS[i]+' '+yr,color:QC[i],year:yr,month:i}));}
-// Ensure rm.months covers a given ISO date — auto-adds months if missing (used after quarterly drag)
-function ensureMonthsCovered(rm, dateStr){
+function ensureMonthsCovered(rm,dateStr){
   if(!dateStr)return;
   const ymd=dateToYMD(dateStr);if(!ymd)return;
   const months=rm.months;
-  // Check if already present
   if(months.some(c=>c.year===ymd.y&&c.month===ymd.m))return;
-  // Add months from the last existing month up to the target month
   const last=months[months.length-1]||{year:new Date().getFullYear(),month:new Date().getMonth()};
   let y=last.year,m=last.month;
   let safety=0;
@@ -528,20 +558,17 @@ function ensureMonthsCovered(rm, dateStr){
     safety++;
   }
 }
-// Ensure rm.quarters covers a given ISO date — auto-adds quarters if missing (used after drag)
-function ensureQuartersCovered(rm, dateStr){
+function ensureQuartersCovered(rm,dateStr){
   if(!dateStr)return;
   const ymd=dateToYMD(dateStr);if(!ymd)return;
-  const qNum=Math.floor(ymd.m/3)+1; // 1-4
+  const qNum=Math.floor(ymd.m/3)+1;
   const quarters=rm.quarters;
   const qColors=['var(--th-q1)','var(--th-q2)','var(--th-q3)','var(--th-q4)'];
-  // Check if already present by parsing label
   const alreadyCovered=quarters.some(qc=>{
     const lm=qc.label&&qc.label.match(/Q(\d)\s*[·\-]\s*(\d{4})/);
     return lm&&parseInt(lm[1])===qNum&&parseInt(lm[2])===ymd.y;
   });
   if(alreadyCovered)return;
-  // Find the last quarter's Q number and year from label
   const last=quarters[quarters.length-1];
   const lastLm=last&&last.label&&last.label.match(/Q(\d)\s*[·\-]\s*(\d{4})/);
   let lq=lastLm?parseInt(lastLm[1]):4;
@@ -550,8 +577,7 @@ function ensureQuartersCovered(rm, dateStr){
   while(!(lq===qNum&&ly===ymd.y)&&safety<20){
     lq++;if(lq>4){lq=1;ly++;}
     const label=`Q${lq} · ${ly}`;
-    const alreadyHas=quarters.some(qc=>qc.label===label);
-    if(!alreadyHas)quarters.push({label,color:qColors[lq-1]});
+    if(!quarters.some(qc=>qc.label===label))quarters.push({label,color:qColors[lq-1]});
     safety++;
   }
 }
@@ -582,17 +608,17 @@ state.roadmaps['demo1']={
   months:buildDefaultMonths(),
   lanes:[
     {name:'Foundation',desc:'Core infrastructure',pills:[
-      {label:'Design System',type:'design',status:'done',startDate:'2026-01-05',endDate:'2026-02-28',assignee:'Leo',blockers:[],col:0,span:2},
-      {label:'Module Architecture',type:'dev',status:'done',startDate:'2026-02-01',endDate:'2026-03-31',assignee:'Saeed, Ankur',blockers:[],col:0,span:2},
+      {label:'Design System',type:'design',status:'done',startDate:'2026-01-05',endDate:'2026-02-28',assignee:'Leo',blockers:[],deliverables:[],col:0,span:2},
+      {label:'Module Architecture',type:'dev',status:'done',startDate:'2026-02-01',endDate:'2026-03-31',assignee:'Saeed, Ankur',blockers:[],deliverables:[],col:0,span:2},
     ]},
     {name:'Content & Review',desc:'Module development',pills:[
-      {label:'Credit 101',type:'design',status:'inprogress',startDate:'2026-04-16',endDate:'2026-05-15',assignee:'Dave',blockers:[{text:'Content review pending',resolved:false}],col:1,span:1},
-      {label:'Budgeting Module',type:'dev',status:'',startDate:'2026-06-15',endDate:'2026-07-15',assignee:'Nathan Ateng',blockers:[],col:2,span:2},
-      {label:'User Testing',type:'research',status:'',startDate:'2026-07-01',endDate:'2026-08-30',assignee:'Leo, Nathan Ateng',blockers:[],col:2,span:2},
+      {label:'Credit 101',type:'design',status:'inprogress',startDate:'2026-04-16',endDate:'2026-05-15',assignee:'Dave',deliverables:[],blockers:[{text:'Content review pending',resolved:false}],col:1,span:1},
+      {label:'Budgeting Module',type:'dev',status:'',startDate:'2026-06-15',endDate:'2026-07-15',assignee:'Nathan Ateng',blockers:[],deliverables:[],col:2,span:2},
+      {label:'User Testing',type:'research',status:'',startDate:'2026-07-01',endDate:'2026-08-30',assignee:'Leo, Nathan Ateng',blockers:[],deliverables:[],col:2,span:2},
     ]},
     {name:'GTM & Launch',desc:'Go-to-market',pills:[
-      {label:'GTM Plan',type:'biz',status:'inprogress',startDate:'2026-05-01',endDate:'2026-06-30',assignee:'Bevon',blockers:[],col:1,span:2},
-      {label:'MVP Launch',type:'biz',status:'',startDate:'2026-09-01',endDate:'2026-09-30',assignee:'Bevon, Nathan Ateng',blockers:[],col:2,span:1},
+      {label:'GTM Plan',type:'biz',status:'inprogress',startDate:'2026-05-01',endDate:'2026-06-30',assignee:'Bevon',blockers:[],deliverables:[],col:1,span:2},
+      {label:'MVP Launch',type:'biz',status:'',startDate:'2026-09-01',endDate:'2026-09-30',assignee:'Bevon, Nathan Ateng',blockers:[],deliverables:[],col:2,span:1},
     ]},
   ]
 };
@@ -602,9 +628,9 @@ state.roadmaps['demo2']={
   months:buildDefaultMonths(),
   lanes:[
     {name:'Direct Integrations',desc:'Platform adaptors',pills:[
-      {label:'Workday',type:'dev',status:'done',startDate:'2026-01-10',endDate:'2026-03-31',assignee:'Simi',blockers:[],col:0,span:1},
-      {label:'Gusto',type:'dev',status:'done',startDate:'2026-01-10',endDate:'2026-03-31',assignee:'Ade',blockers:[],col:0,span:1},
-      {label:'Oracle HCM',type:'dev',status:'inprogress',startDate:'2026-05-01',endDate:'2026-06-30',assignee:'Simi',blockers:[],col:1,span:2},
+      {label:'Workday',type:'dev',status:'done',startDate:'2026-01-10',endDate:'2026-03-31',assignee:'Simi',blockers:[],deliverables:[],col:0,span:1},
+      {label:'Gusto',type:'dev',status:'done',startDate:'2026-01-10',endDate:'2026-03-31',assignee:'Ade',blockers:[],deliverables:[],col:0,span:1},
+      {label:'Oracle HCM',type:'dev',status:'inprogress',startDate:'2026-05-01',endDate:'2026-06-30',assignee:'Simi',blockers:[],deliverables:[],col:1,span:2},
     ]},
   ]
 };
@@ -751,28 +777,24 @@ function logAct(action,roadmap){
     action:action,roadmap:roadmap||'',ts:Date.now()
   });
 }
-function _renderActBody(container){
-  var colors={save:'#1A7A4A',create:'#1B4F8A',delete:'#C62828',import:'#B45309',update:'#2383E2',move:'#7C3AED'};
-  var labels={save:'saved',create:'created',delete:'deleted',import:'imported',update:'updated',move:'moved'};
-  if(!_actEntries||!_actEntries.length){
-    container.innerHTML='<div style="padding:24px;text-align:center;font-size:12px;color:#888;font-style:italic">No activity yet.</div>';
-    return;
-  }
-  var h='';
-  _actEntries.forEach(function(e){
-    var when=new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-    var col=colors[e.action]||'#888';
-    var lbl=labels[e.action]||e.action;
-    h+='<div class="act-item"><div class="act-dot" style="background:'+col+'"></div><div class="act-body"><span class="act-who">'+esc(e.who)+'</span> <span class="act-what">'+lbl+' '+(e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':'')+'</span><div class="act-when">'+when+'</div></div></div>';
-  });
-  container.innerHTML=h;
-}
 var _actEntries=[];
 function renderActLog(entries){
   _actEntries=entries||[];
   var body=document.getElementById('logs-modal-body');
   var modal=document.getElementById('logs-modal-bg');
   if(body&&modal&&modal.style.display!=='none')_renderActBody(body);
+}
+function _renderActBody(container){
+  var colors={save:'#1A7A4A',create:'#1B4F8A',delete:'#C62828',import:'#B45309',update:'#2383E2',move:'#7C3AED'};
+  var labels={save:'saved',create:'created',delete:'deleted',import:'imported',update:'updated',move:'moved'};
+  if(!_actEntries||!_actEntries.length){container.innerHTML='<div style="padding:24px;text-align:center;font-size:12px;color:#888;font-style:italic">No activity yet.</div>';return;}
+  var h='';
+  _actEntries.forEach(function(e){
+    var when=new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    var col=colors[e.action]||'#888';var lbl=labels[e.action]||e.action;
+    h+='<div class="act-item"><div class="act-dot" style="background:'+col+'"></div><div class="act-body"><span class="act-who">'+esc(e.who)+'</span> <span class="act-what">'+lbl+' '+(e.roadmap?'<strong>'+esc(e.roadmap)+'</strong>':'')+'</span><div class="act-when">'+when+'</div></div></div>';
+  });
+  container.innerHTML=h;
 }
 function openLogs(){
   var modal=document.getElementById('logs-modal-bg');
@@ -782,32 +804,21 @@ function openLogs(){
   body.innerHTML='<div style="padding:24px;text-align:center;font-size:12px;color:#888">Loading...</div>';
   if(window._fbDB){
     window._fbDB.ref('activity').once('value').then(function(s){
-      if(!s.exists()){_renderActBody(body);return;}
+      if(!s.exists()){renderActLog([]);_renderActBody(body);return;}
       var entries=Object.values(s.val()).sort(function(a,b){return b.ts-a.ts;}).slice(0,100);
-      renderActLog(entries);
-      _renderActBody(body);
+      renderActLog(entries);_renderActBody(body);
     }).catch(function(){_renderActBody(body);});
   } else {_renderActBody(body);}
 }
-function closeLogs(){
-  var modal=document.getElementById('logs-modal-bg');
-  if(modal)modal.style.display='none';
-}
-
-// ══════════════════════════════════════════════════════════════════
-// SAVE / MISC
-// ══════════════════════════════════════════════════════════════════
+function closeLogs(){var modal=document.getElementById('logs-modal-bg');if(modal)modal.style.display='none';}
 function save(){
   if(!window._fbDB||!window._currentUser)return;
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(function(){
     window._ownSaveCount=(window._ownSaveCount||0)+1;
-    var rmName=state.activeId?(state.roadmaps[state.activeId]?.name||''):'';
     window._fbDB.ref('roadmaps').set(state.roadmaps).catch(function(e){
-      console.error('Firebase save error:',e);
-      toast('Save failed — check your connection','#C62828');
+      console.error('Firebase save:',e);toast('Save failed','#C62828');
     });
-    logAct('save',rmName);
   },600);
 }
 var _saveTimer=null;
@@ -857,10 +868,8 @@ function _pdStartDrag(e,li,pi){
   const durMs=(startMs&&endMs)?endMs-startMs:0;
   const hadNoStart=!pill.startDate; // track so we can flag it
 
-  // Capture scroll position at drag start so monthly scroll doesn't corrupt dx
-  const scrollEl=document.querySelector('.grid-wrap');
-  const startScrollLeft=scrollEl?scrollEl.scrollLeft:0;
-
+  const _scrollEl0=document.querySelector('.grid-wrap');
+  const startScrollLeft=_scrollEl0?_scrollEl0.scrollLeft:0;
   _pd={
     li,pi,
     origLi:li,
@@ -883,15 +892,14 @@ function _pdStartDrag(e,li,pi){
 
 function _pdMove(e){
   if(!_pd)return;
-  // Adjust dx for any scroll that happened during drag (critical for monthly scrollable grid)
-  const scrollEl=document.querySelector('.grid-wrap');
-  const scrollDelta=scrollEl?scrollEl.scrollLeft-_pd.startScrollLeft:0;
+  const _scrollEl1=document.querySelector('.grid-wrap');
+  const scrollDelta=_scrollEl1?_scrollEl1.scrollLeft-_pd.startScrollLeft:0;
   const dx=(e.clientX-_pd.startX)+scrollDelta;
   const dy=e.clientY-_pd.startY;
 
   // Only start dragging after 4px threshold
   if(!_pd.active&&Math.abs(dx)<4&&Math.abs(dy)<4)return;
-  if(!_pd.active)hideTT(); // hide tooltip the moment drag threshold is crossed
+  if(!_pd.active)hideTT();
   _pd.active=true;
 
   e.preventDefault();
@@ -1021,21 +1029,13 @@ function _pdEnd(e){
     logAct('move',`shifted "${updated.label}" dates in "${fromLane.name}"`);
   }
 
-  // Clear any stale draft for this pill so canvas re-renders from fresh saved state
   delete _itemDrafts[_draftKey(toLi,toLi!==origLi?rm.lanes[toLi].pills.length-1:pi)];
   delete _itemDrafts[_draftKey(origLi,pi)];
-  save();
-  // Ensure both views have columns covering the new date range
-  ensureMonthsCovered(rm,updated.startDate);
-  ensureMonthsCovered(rm,updated.endDate);
-  ensureQuartersCovered(rm,updated.startDate);
-  ensureQuartersCovered(rm,updated.endDate);
-  // Preserve scroll position — renderCanvas() replaces the DOM which resets scrollLeft to 0
-  const _scrollEl=document.querySelector('.grid-wrap');
-  const _savedScroll=_scrollEl?_scrollEl.scrollLeft:0;
+  ensureMonthsCovered(rm,updated.startDate);ensureMonthsCovered(rm,updated.endDate);
+  ensureQuartersCovered(rm,updated.startDate);ensureQuartersCovered(rm,updated.endDate);
+  const _se=document.querySelector('.grid-wrap');const _ss=_se?_se.scrollLeft:0;
   renderSidebar();renderCanvas();
-  const _scrollElAfter=document.querySelector('.grid-wrap');
-  if(_scrollElAfter&&_savedScroll>0)_scrollElAfter.scrollLeft=_savedScroll;
+  const _se2=document.querySelector('.grid-wrap');if(_se2&&_ss>0)_se2.scrollLeft=_ss;
   toast('Updated','#1A7A4A');
 }
 
@@ -1130,7 +1130,7 @@ function renderSidebar(){
   });
   h+=`<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px">
     <div style="font-size:10px;font-weight:700;color:var(--mid);margin-bottom:5px">Status Colors</div>`;
-  [['inprogress','In Progress'],['blocked','Blocked'],['done','Done']].forEach(([id,label])=>{
+  [['notstarted','Not Started'],['inprogress','In Progress'],['blocked','Blocked'],['done','Done']].forEach(([id,label])=>{
     h+=`<div class="type-row">
       <div class="type-swatch" style="background:${STATUS_COLORS[id]}" onclick="pickStatusColor('${id}')" title="Click to change color"></div>
       <span style="flex:1">${label}</span>
@@ -1239,7 +1239,7 @@ function confirmAddItem(li){
   const rm=state.roadmaps[state.activeId];if(!rm)return;
   const lane=rm.lanes?.[li];if(!lane)return;
   if(!Array.isArray(lane.pills))lane.pills=[];
-  lane.pills.push({label:name,col:0,type:'dev',status:'',startDate:'',endDate:'',assignee:'',blockers:[],span:1});
+  lane.pills.push({label:name,col:0,type:'dev',status:'',startDate:'',endDate:'',assignee:'',blockers:[],deliverables:[],span:1});
   logAct('create',`added "${name}" to "${lane.name}" in "${rm.name}"`);
   save();renderSidebar();renderCanvas();
   toast('Item added','#1A7A4A');
@@ -1292,47 +1292,46 @@ function assignRows(items){
 }
 
 
+// ── PILL RENDERING ────────────────────────────────────────────
+// Hybrid approach: bar shows truncated label for all pill widths.
+// Dates always render below the bar (constrained by pill-wrap width via overflow:hidden).
+// Wide pills (≥80px): label + status dot in bar, dates below.
+// Narrow pills (<80px): truncated label only in bar (no dot), dates below.
+// Truly tiny pills (<12px): empty bar, no dates — bar too small for any text.
+// All detail always available via hover tooltip regardless of pill width.
+
 function pillHTML(p,maxW,li,pi,offsetPct,widthPct,preciseStyleArg){
-  // offsetPct/widthPct: monthly precise positioning
-  // preciseStyleArg: quarterly absolute positioning
   const usePrecise=offsetPct!==undefined&&widthPct!==undefined;
   const t=TM()[p.type]||{color:'#888',tc:'#fff'};
   const isDone=p.status==='done';
   const doneStyle=isDone?';opacity:0.5;filter:grayscale(35%)':'';
   const isSelected=state.selectedPill?.li===li&&state.selectedPill?.pi===pi;
   const outline=isSelected?`;box-shadow:0 0 0 2.5px #fff,0 0 0 4px ${t.color}`:'';
-  // Canvas shows saved state only
   const assignees=parseAssignees(p.assignee);
-  const statusLabel2={inprogress:'IN PROGRESS',blocked:'BLOCKED',done:'DONE'}[p.status||'']||'';
   const dateStr=(p.startDate||p.endDate)?`${isoToDisp(p.startDate)}${p.endDate?` → ${isoToDisp(p.endDate)}`:''}`:null;
   const ttData=`data-tt="${esc(p.label)}|${esc(assignees.join(', '))}|${esc(dateStr||'')}|${esc(p.status||'')}|${(p.blockers||[]).filter(b=>typeof b==='object'?!b.resolved:true).length}"`;
 
-  // Width tiers (industry standard)
-  const tiny=maxW<30;
-  const narrow=maxW<80;
+  const isNarrow=maxW<80;
+  const tiny=maxW<12;
   const medium=maxW<150;
 
-  const avRow=(list,tc)=>{
-    const names=list.slice(0,3).map(n=>n.split(' ')[0]).join(', ')+(list.length>3?` +${list.length-3}`:'');
-    return`<div style="display:block;margin-top:0;pointer-events:none;font-size:10px;color:var(--mid);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:14px;height:14px">${esc(names)}</div>`;
-  };
-
-  let inner='';
-  if(!tiny&&!narrow){
-    inner=`<span class="pill-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(p.label)}</span>`;
-    // Status: dot only (no text badge) — color communicates status
-    if(p.status)inner+=`<span class="s-dot" style="background:${getStatusDot(p.status)};flex-shrink:0;margin-left:auto"></span>`;
-  } else if(!tiny&&p.status){
-    inner=`<span class="s-dot" style="background:${getStatusDot(p.status)};margin:auto"></span>`;
-  }
-
-  // Determine positioning style
   let preciseStyle=preciseStyleArg||null;
   if(!preciseStyle&&usePrecise){
     preciseStyle=`position:absolute;left:${offsetPct.toFixed(1)}%;width:${Math.max(widthPct,2).toFixed(1)}%;top:5px;z-index:2`;
   }
-  const wrapStyle=preciseStyle||`width:${maxW}px;max-width:${maxW}px`;
-  const showBelow=!tiny&&!narrow;
+  const posClause=preciseStyle?'':';position:relative';
+  const wrapStyle=(preciseStyle||`width:${maxW}px;max-width:${maxW}px`)+posClause;
+
+  // Bar label: all non-tiny pills show truncated label. Wide pills also show status dot.
+  let inner='';
+  if(!tiny){
+    inner=`<span class="pill-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.label)}</span>`;
+    if(!isNarrow&&p.status)inner+=`<span class="s-dot" style="background:${getStatusDot(p.status)};flex-shrink:0;margin-left:auto"></span>`;
+  }
+
+  // Hybrid: dates below bar for all non-tiny pills.
+  // pill-wrap width constrains date text via overflow:hidden — can never bleed horizontally.
+  const showBelow=!tiny;
 
   return `<div class="pill-wrap" style="${wrapStyle}${doneStyle}"
       ${ttData}
@@ -1340,10 +1339,11 @@ function pillHTML(p,maxW,li,pi,offsetPct,widthPct,preciseStyleArg){
       onclick="selectPill(${li},${pi})"
       onpointerdown="_pdStartDrag(event,${li},${pi})">
     <div class="pill" style="background:${t.color};color:${t.tc};width:100%;pointer-events:none${outline}">${inner}</div>
-    ${showBelow&&dateStr?`<div class="pill-dates" style="pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${esc(dateStr)}</div>`:''}
-    ${showBelow&&assignees.length>0&&!medium?avRow(assignees,t.tc):''}
+    ${showBelow&&dateStr?`<div class="pill-dates" style="pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:13px;height:13px">${esc(dateStr)}</div>`:''}
   </div>`;
 }
+
+
 
 
 // QUARTERLY
@@ -1354,7 +1354,6 @@ function renderQuarterly(rm){
   const now=new Date();
   const todayYMD=dateToYMD(now.toISOString().slice(0,10));
   const todayQNum=todayYMD?Math.floor(todayYMD.m/3):0;
-  // Find today's column by matching year+quarter in label (year-aware, works for 2027+)
   let todayColIdx=-1;
   cols.forEach((qc,ci)=>{
     const lm=qc.label&&qc.label.match(/Q(\d)\s*[·\-]\s*(\d{4})/);
@@ -1397,7 +1396,6 @@ function renderQuarterly(rm){
           });
           const eoff=dateToQOffset(p.endDate);
           if(found>=0)endColF=found+eoff;
-          // Fallback: clamp to last column rather than using year-unaware dateToQ
           else endColF=Math.max(col,nc-1)+eoff;
         }
       }
@@ -1439,8 +1437,9 @@ function renderQuarterly(rm){
         const leftPct=startOff*100;
         const widthPct=widthUnits*100;
         const top=4+r*rowH;
+        const actualPillPxQ=Math.max(widthUnits*CW, 0);
         const preciseStyle=`position:absolute;left:${leftPct.toFixed(1)}%;width:${widthPct.toFixed(1)}%;top:${top}px;z-index:${3+r}`;
-        h+=pillHTML(p,CW*Math.max(1,widthUnits)-8,li,pi,undefined,undefined,preciseStyle);
+        h+=pillHTML(p,actualPillPxQ,li,pi,undefined,undefined,preciseStyle);
       });
       h+=`</div>`;
     }
@@ -1466,7 +1465,6 @@ function renderMonthly(rm){
   cols.forEach(c=>h+=`<div class="qh-cell" style="background:${c.color};font-size:11px">${esc(c.label)}</div>`);
   (rm.lanes||[]).forEach((lane,li)=>{
     const par=li%2===0?'re':'ro';
-    // Single pass: compute position + row assignment from saved state (origP only — no drafts on canvas)
     const allPillsM=(lane.pills||[]).map((origP,pi)=>{
       const p=origP;
       const startYMD=dateToYMD(p.startDate);
@@ -1478,7 +1476,6 @@ function renderMonthly(rm){
       if(ei<si||ei===-1)ei=si;
       ei=Math.min(ei,nc-1);
       const span=ei-si+1;
-      // Precise offset within start column
       let startOffsetPct=0,totalWidthPct=100*span;
       if(startYMD){
         const daysInStartMonth=new Date(startYMD.y,startYMD.m+1,0).getDate();
@@ -1498,7 +1495,6 @@ function renderMonthly(rm){
     assignRows(allPillsM);
     const maxRowM=allPillsM.reduce((m,x)=>Math.max(m,x.row||0),0);
     const rowHM=56;const cellHM=Math.max(64,(maxRowM+1)*rowHM+8);
-    // Group by start column for rendering
     const cellItems=Array.from({length:nc},()=>[]);
     allPillsM.forEach(item=>cellItems[item.si].push(item));
     h+=`<div class="ll-cell ${par}" data-li="${li}" style="min-height:${cellHM}px;display:flex;flex-direction:row;align-items:flex-start;padding:8px 8px;gap:6px">
@@ -1516,16 +1512,18 @@ function renderMonthly(rm){
       </div>
     </div>`;
     for(let ci=0;ci<nc;ci++){
+      const ciItems=cellItems[ci];
       h+=`<div class="dc-cell ${par}" style="overflow:visible;position:relative;min-height:${cellHM}px;height:${cellHM}px"
         data-li="${li}" data-col="${ci}"
         onmouseenter="onCellEnter(event,${li},${ci})" onmouseleave="onCellLeave(event)"
         ondragover="onCellDragOver(event,${li},${ci})"
         ondrop="onCellDrop(event,${li},${ci})">`;
-      cellItems[ci].forEach(({p,pi,startOffsetPct,totalWidthPct,span,row})=>{
+      ciItems.forEach(({p,pi,startOffsetPct,totalWidthPct,span,row})=>{
         const r=row||0;
         const top=4+r*rowHM;
+        const actualPillPx=Math.max(totalWidthPct/100*CW, 0);
         const preciseStyle=`position:absolute;left:${startOffsetPct.toFixed(1)}%;width:${Math.max(totalWidthPct,2).toFixed(1)}%;top:${top}px;z-index:${3+r}`;
-        h+=pillHTML(p,CW*span-8,li,pi,undefined,undefined,preciseStyle);
+        h+=pillHTML(p,actualPillPx,li,pi,undefined,undefined,preciseStyle);
       });
       h+=`</div>`;
     }
@@ -1652,7 +1650,7 @@ function renderDaily(rm){
 // TOOLTIP
 // ══════════════════════════════════════════════════════════════════
 function showTT(e,el){
-  if(_pd&&_pd.active)return; // suppress tooltip during drag
+  if(_pd&&_pd.active)return;
   const raw=el.getAttribute('data-tt');if(!raw)return;
   const[label,assignee,dates,status,bc]=raw.split('|');
   const sLabels={inprogress:'In Progress',blocked:'Blocked',done:'Done'};
@@ -1707,70 +1705,69 @@ function saveDetailEdit(){
   renderDetail();renderSidebar();
 }
 function renderDetail(){
+  const drawer=document.getElementById('detail-drawer');
   const area=document.getElementById('detail-area');
-  if(!state.selectedPill||!state.activeId){area.innerHTML='';return;}
-  const rm=state.roadmaps[state.activeId];
+  if(!area||!drawer)return;
+  if(!state.selectedPill||!state.activeId){
+    drawer.classList.remove('open');area.innerHTML='';return;
+  }
+  drawer.classList.add('open');
+  const rm=state.roadmaps[state.activeId];if(!rm)return;
   const{li,pi}=state.selectedPill;
-  const lane=rm.lanes?.[li];if(!lane){area.innerHTML='';return;}
-  const p=lane.pills?.[pi];if(!p){area.innerHTML='';return;}
-  const tm=TM();const t=tm[p.type]||{color:'#888',tc:'#fff'};
-  const sLabel={inprogress:'In Progress',blocked:'Blocked',done:'Done'}[p.status||'']||'No Status';
-  const dateStr=(p.startDate||p.endDate)?`${isoToDisp(p.startDate)}${p.endDate?` → ${isoToDisp(p.endDate)}`:''}`:null;
-  const das=parseAssignees(p.assignee);
+  const lane=(rm.lanes||[])[li];if(!lane)return;
+  const p=(lane.pills||[])[pi];if(!p)return;
   const isEdit=!!state._detailEditMode;
-  const draft=isEdit?(_getDraft(li,pi)||p):null;
+  const draft=isEdit?(_itemDrafts[_draftKey(li,pi)]||null):null;
   const dp=draft||p;
-
-  // Build blockers HTML
-  const blockers=(dp.blockers||[]).map((b,bi)=>typeof b==='object'?b:{text:b,resolved:false});
+  const t=TYPES.find(x=>x.id===dp.type)||TYPES[0];
+  const st=STATUSES.find(x=>x.id===dp.status);
+  const sLabel=st?st.label:'—';
+  const das=(dp.assignee||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const sd=dp.startDate?new Date(dp.startDate+'T00:00:00'):null;
+  const ed=dp.endDate?new Date(dp.endDate+'T00:00:00'):null;
+  const fmt=d=>d?d.toLocaleDateString('en-US',{month:'short',day:'numeric'}):null;
+  const dateStr=[fmt(sd),fmt(ed)].filter(Boolean).join(' → ');
+  const typeDot=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color};margin-right:4px;flex-shrink:0"></span>`;
+  const blockers=(dp.blockers||[]).map(b=>typeof b==='object'?b:{text:b,resolved:false});
   const openCount=blockers.filter(b=>!b.resolved).length;
 
-  let h=`<div class="detail-panel-wrap"><div class="detail-panel">
-    <div class="detail-panel-hd">
-      <h3 style="color:${t.color}">${esc(dp.label)}</h3>
-      <div class="detail-panel-actions">
-        ${isEdit
-          ?`<span class="detail-edit-mode-badge">Editing</span>
-             <button class="btn btn-neutral btn-sm" onclick="saveDetailEdit()" style="background:#1A7A4A;color:#fff;border-color:#1A7A4A">💾 Save</button>
-             <button class="btn btn-neutral btn-sm" onclick="cancelDetailEdit()">✕ Cancel</button>`
-          :`<button class="btn btn-neutral btn-sm" onclick="openDetailEdit()">Edit</button>
-             <button class="btn btn-neutral btn-sm" onclick="state.selectedPill=null;state._detailEditMode=false;renderCanvas();renderDetail();renderSidebar()">Close ✕</button>`
-        }
-      </div>
-    </div>`;
+  let h=`<div class="detail-panel-wrap">`;
+  // Sticky drawer header
+  h+=`<div class="drawer-header">
+    <div class="drawer-header-title" style="color:${t.color}" title="${esc(dp.label)}">${esc(dp.label)}</div>
+    <div class="drawer-header-actions">
+      ${isEdit
+        ?`<span class="detail-edit-mode-badge">Editing</span>
+           <button class="btn btn-neutral btn-sm" onclick="saveDetailEdit()" style="background:#1A7A4A;color:#fff;border-color:#1A7A4A">Save</button>
+           <button class="btn btn-neutral btn-sm" onclick="cancelDetailEdit()">Cancel</button>`
+        :`<button class="btn btn-neutral btn-sm" onclick="openDetailEdit()">Edit</button>`
+      }
+      <button class="drawer-close-btn" onclick="state.selectedPill=null;state._detailEditMode=false;renderCanvas();renderDetail();renderSidebar()" title="Close">✕</button>
+    </div>
+  </div>`;
+  h+=`<div class="detail-panel">`;
 
   if(isEdit){
-    // EDIT MODE — editable fields
     h+=`<div class="detail-grid">
-      <div class="detail-field">
-        <div class="detail-field-lbl">Label</div>
-        <input class="detail-field-input" value="${esc(dp.label)}" oninput="_setDraftField(${li},${pi},'label',this.value)">
-      </div>
-      <div class="detail-field">
-        <div class="detail-field-lbl">Type</div>
+      <div class="detail-field"><div class="detail-field-lbl">Label</div>
+        <input class="detail-field-input" value="${esc(dp.label)}" oninput="_setDraftField(${li},${pi},'label',this.value)"></div>
+      <div class="detail-field"><div class="detail-field-lbl">Type</div>
         <select class="detail-field-input" onchange="_setDraftField(${li},${pi},'type',this.value)">`;
     TYPES.forEach(ty=>h+=`<option value="${ty.id}"${dp.type===ty.id?' selected':''}>${ty.label}</option>`);
     h+=`</select></div>
-      <div class="detail-field">
-        <div class="detail-field-lbl">Status</div>
+      <div class="detail-field"><div class="detail-field-lbl">Status</div>
         <select class="detail-field-input" onchange="_setDraftField(${li},${pi},'status',this.value)">`;
     STATUSES.forEach(s=>h+=`<option value="${s.id}"${(dp.status||'')=== s.id?' selected':''}>${s.label}</option>`);
     h+=`</select></div>
-      <div class="detail-field">
-        <div class="detail-field-lbl">Assignees</div>
-        <input class="detail-field-input" value="${esc(dp.assignee||'')}" placeholder="Names, comma-separated" oninput="_setDraftField(${li},${pi},'assignee',this.value)">
-      </div>
-      <div class="detail-field">
-        <div class="detail-field-lbl">Start Date</div>
-        <input type="date" class="detail-field-input" value="${dp.startDate||''}" onchange="_setDraftField(${li},${pi},'startDate',this.value)">
-      </div>
-      <div class="detail-field">
-        <div class="detail-field-lbl">End Date</div>
-        <input type="date" class="detail-field-input" value="${dp.endDate||''}" onchange="_setDraftField(${li},${pi},'endDate',this.value)">
-      </div>
+      <div class="detail-field"><div class="detail-field-lbl">Assignees</div>
+        <input class="detail-field-input" value="${esc(dp.assignee||'')}" placeholder="Names, comma-separated" oninput="_setDraftField(${li},${pi},'assignee',this.value)"></div>
+      <div class="detail-field"><div class="detail-field-lbl">Start Date</div>
+        <input type="date" class="detail-field-input" value="${dp.startDate||''}" onchange="_setDraftField(${li},${pi},'startDate',this.value)"></div>
+      <div class="detail-field"><div class="detail-field-lbl">End Date</div>
+        <input type="date" class="detail-field-input" value="${dp.endDate||''}" onchange="_setDraftField(${li},${pi},'endDate',this.value)"></div>
     </div>`;
 
-    // Blockers — edit mode
+    // BLOCKERS edit
     h+=`<div class="blocker-section">
       <div class="blocker-section-hd">
         <div class="blocker-section-title">⚠ Blockers ${openCount>0?`<span class="blocker-open-count">${openCount} open</span>`:''}</div>
@@ -1786,34 +1783,54 @@ function renderDetail(){
             <input value="${esc(b.text)}" ${isRes?'style="text-decoration:line-through;color:var(--light)"':''}
               oninput="_setDraftBlockerText(${li},${pi},${bi},this.value)">
           </div>
-          <div>
-            <button class="blocker-toggle-btn ${isRes?'blocker-toggle-resolved':'blocker-toggle-open'}"
-              onclick="_toggleDraftBlocker(${li},${pi},${bi})">
-              ${isRes?'Resolved — click to reopen':'Open — click to resolve'}
-            </button>
-          </div>
+          <div><button class="blocker-toggle-btn ${isRes?'blocker-toggle-resolved':'blocker-toggle-open'}"
+            onclick="_toggleDraftBlocker(${li},${pi},${bi})">${isRes?'Resolved — click to reopen':'Open — click to resolve'}</button></div>
         </div>
         <button class="blocker-del-btn" onclick="_deleteDraftBlocker(${li},${pi},${bi})">✕</button>
       </div>`;
     });
     h+=`<div id="blocker-add-form-${li}-${pi}" style="display:none">
       <div class="blocker-add-form">
-        <input class="blocker-add-input" id="blocker-add-input-${li}-${pi}" placeholder="Describe the blocker (e.g. Waiting for API approval)">
+        <input class="blocker-add-input" id="blocker-add-input-${li}-${pi}" placeholder="Describe the blocker">
         <button class="blocker-add-confirm" onclick="_addDraftBlockerFromForm(${li},${pi})">Add</button>
         <button class="blocker-add-cancel" onclick="document.getElementById('blocker-add-form-${li}-${pi}').style.display='none'">Cancel</button>
       </div>
-    </div>
-    </div>`;
+    </div></div>`;
+
+    // DELIVERABLES edit
+    const deliverables=(dp.deliverables||[]).map(dv=>typeof dv==='object'?dv:{text:dv,done:false});
+    const delivDone=deliverables.filter(dv=>dv.done).length;
+    h+=`<div class="deliv-section">
+      <div class="deliv-section-hd">
+        <div class="deliv-section-title">✓ Deliverables${deliverables.length>0?` <span class="deliv-done-count">${delivDone}/${deliverables.length}</span>`:''}</div>
+        <button class="deliv-add-btn" onclick="showDeliverableAddForm(${li},${pi})">+ Add</button>
+      </div>`;
+    if(!deliverables.length)h+=`<div class="deliv-empty">No deliverables yet. Click "+ Add" to add one.</div>`;
+    deliverables.forEach((dv,di)=>{
+      const isDone=dv.done;
+      h+=`<div class="deliv-row${isDone?' done':''}">
+        <div class="deliv-check${isDone?' checked':''}" onclick="_toggleDraftDeliverable(${li},${pi},${di})">${isDone?'✓':''}</div>
+        <input class="deliv-text-input" value="${esc(dv.text)}" style="${isDone?'text-decoration:line-through;color:var(--light)':''}"
+          oninput="_setDraftDeliverableText(${li},${pi},${di},this.value)">
+        <button class="deliv-del-btn" onclick="_deleteDraftDeliverable(${li},${pi},${di})">✕</button>
+      </div>`;
+    });
+    h+=`<div id="deliv-add-form-${li}-${pi}" style="display:none">
+      <div class="deliv-add-form">
+        <input class="deliv-add-input" id="deliv-add-input-${li}-${pi}" placeholder="e.g. Figma handoff complete" onkeydown="if(event.key==='Enter')_addDraftDeliverableFromForm(${li},${pi})">
+        <button class="deliv-add-confirm" onclick="_addDraftDeliverableFromForm(${li},${pi})">Add</button>
+        <button class="deliv-add-cancel" onclick="document.getElementById('deliv-add-form-${li}-${pi}').style.display='none'">Cancel</button>
+      </div>
+    </div></div>`;
 
   } else {
-    // VIEW MODE — read-only
+    // VIEW MODE
     h+=`<div class="detail-grid">
       <div class="detail-field"><div class="detail-field-lbl">Lane</div><div class="detail-field-val">${esc(lane.name)}</div></div>
-      <div class="detail-field"><div class="detail-field-lbl">Type</div><div class="detail-field-val" style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${t.color};display:inline-block"></span>${esc(t.label)}</div></div>
+      <div class="detail-field"><div class="detail-field-lbl">Type</div><div class="detail-field-val" style="display:flex;align-items:center;gap:4px">${typeDot}${esc(t.label)}</div></div>
       <div class="detail-field"><div class="detail-field-lbl">Status</div><div class="detail-field-val"><span style="background:${getStatusDot(p.status)}22;color:${getStatusDot(p.status)};padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600">${sLabel}</span></div></div>
       ${dateStr?`<div class="detail-field"><div class="detail-field-lbl">Duration</div><div class="detail-field-val">${esc(dateStr)}</div></div>`:''}
     </div>`;
-
     if(das.length>0){
       h+=`<div style="margin-bottom:14px"><div class="detail-field-lbl" style="margin-bottom:6px">Assignee${das.length>1?'s':''}</div><div style="display:flex;flex-direction:column;gap:5px">`;
       das.forEach(n=>{
@@ -1821,8 +1838,7 @@ function renderDetail(){
       });
       h+=`</div></div>`;
     }
-
-    // Blockers — view mode
+    // BLOCKERS view
     const savedBlockers=(p.blockers||[]).map(b=>typeof b==='object'?b:{text:b,resolved:false});
     const savedOpen=savedBlockers.filter(b=>!b.resolved).length;
     h+=`<div class="blocker-section">
@@ -1841,11 +1857,27 @@ function renderDetail(){
       </div>`;
     });
     h+=`</div>`;
+    // DELIVERABLES view
+    const savedDelivs=(p.deliverables||[]).map(dv=>typeof dv==='object'?dv:{text:dv,done:false});
+    const savedDelivDone=savedDelivs.filter(dv=>dv.done).length;
+    h+=`<div class="deliv-section">
+      <div class="deliv-section-hd">
+        <div class="deliv-section-title">✓ Deliverables${savedDelivs.length>0?` <span class="deliv-done-count">${savedDelivDone}/${savedDelivs.length}</span>`:''}</div>
+      </div>`;
+    if(!savedDelivs.length)h+=`<div class="deliv-empty">No deliverables recorded.</div>`;
+    savedDelivs.forEach(dv=>{
+      const isDone=dv.done;
+      h+=`<div class="deliv-row${isDone?' done':''}">
+        <div class="deliv-check${isDone?' checked':''}" style="cursor:default">${isDone?'✓':''}</div>
+        <div class="deliv-text-view${isDone?' done':''}">${esc(dv.text)}</div>
+        <span style="font-size:10px;color:${isDone?'#059669':'var(--light)'};flex-shrink:0">${isDone?'Done':'Open'}</span>
+      </div>`;
+    });
+    h+=`</div>`;
   }
 
   h+=`</div></div>`;
   area.innerHTML=h;
-  area.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // Blocker draft helpers — operate on draft, re-render detail only
@@ -1867,6 +1899,39 @@ function _toggleDraftBlocker(li,pi,bi){
 function _deleteDraftBlocker(li,pi,bi){
   const d=_getDraft(li,pi);if(!d)return;
   if(d.blockers)d.blockers.splice(bi,1);
+  renderDetail();
+}
+function _setDraftDeliverableText(li,pi,di,val){
+  const d=_getDraft(li,pi);if(!d)return;
+  if(!d.deliverables)d.deliverables=[];
+  const dv=d.deliverables[di];
+  if(typeof dv==='object')dv.text=val;
+  else d.deliverables[di]={text:val,done:false};
+}
+function _toggleDraftDeliverable(li,pi,di){
+  const d=_getDraft(li,pi);if(!d)return;
+  if(!d.deliverables)d.deliverables=[];
+  const dv=d.deliverables[di];
+  if(typeof dv==='object')dv.done=!dv.done;
+  else d.deliverables[di]={text:dv,done:true};
+  renderDetail();
+}
+function _deleteDraftDeliverable(li,pi,di){
+  const d=_getDraft(li,pi);if(!d)return;
+  if(d.deliverables)d.deliverables.splice(di,1);
+  renderDetail();
+}
+function showDeliverableAddForm(li,pi){
+  const el=document.getElementById('deliv-add-form-'+li+'-'+pi);
+  if(el){el.style.display='block';document.getElementById('deliv-add-input-'+li+'-'+pi)?.focus();}
+}
+function _addDraftDeliverableFromForm(li,pi){
+  const inp=document.getElementById('deliv-add-input-'+li+'-'+pi);
+  if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const d=_getDraft(li,pi);if(!d)return;
+  if(!d.deliverables)d.deliverables=[];
+  d.deliverables.push({text,done:false});
   renderDetail();
 }
 function showBlockerAddForm(li,pi){
@@ -2028,21 +2093,86 @@ function deleteRoadmap(){
 }
 function toggleDlMenu(){const m=document.getElementById('dl-menu');m.style.display=m.style.display==='none'?'block':'none';}
 document.addEventListener('click',e=>{const w=document.querySelector('.dl-wrap');if(w&&!w.contains(e.target))document.getElementById('dl-menu').style.display='none';});
+async function _captureFullCanvas(){
+  // Capture the full grid regardless of scroll position or viewport clipping.
+  // Strategy: find the inner grid div (full natural width), temporarily remove overflow
+  // constraints on all ancestor scroll containers, capture, then restore.
+  const{default:h2c}=await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.min.js');
+  const canvasEl=document.getElementById('canvas');
+
+  // Save and reset scroll positions so capture starts from left/top
+  const scrollContainers=[];
+  let el=canvasEl.parentElement;
+  while(el&&el!==document.body){
+    if(el.scrollLeft!==0||el.scrollTop!==0){
+      scrollContainers.push({el,x:el.scrollLeft,y:el.scrollTop});
+      el.scrollLeft=0;el.scrollTop=0;
+    }
+    el=el.parentElement;
+  }
+
+  // Temporarily expand parent overflow so html2canvas sees full natural dimensions
+  const canvasWrap=document.querySelector('.canvas-wrap');
+  const gridWrap=document.querySelector('.grid-wrap');
+  const prevCWOverflow=canvasWrap?canvasWrap.style.overflow:'';
+  const prevCWWidth=canvasWrap?canvasWrap.style.width:'';
+  const prevGWOverflow=gridWrap?gridWrap.style.overflow:'';
+  if(canvasWrap){canvasWrap.style.overflow='visible';canvasWrap.style.width='max-content';}
+  if(gridWrap){gridWrap.style.overflow='visible';}
+
+  // Close detail drawer temporarily for cleaner export
+  const drawer=document.getElementById('detail-drawer');
+  const drawerWasOpen=drawer&&drawer.classList.contains('open');
+  if(drawerWasOpen)drawer.classList.remove('open');
+
+  // Small delay to let DOM repaint
+  await new Promise(r=>setTimeout(r,120));
+
+  const cvs=await h2c(canvasEl,{
+    scale:2,
+    useCORS:true,
+    backgroundColor:'#ffffff',
+    logging:false,
+    width:canvasEl.scrollWidth,
+    height:canvasEl.scrollHeight,
+    windowWidth:canvasEl.scrollWidth,
+    windowHeight:canvasEl.scrollHeight,
+  });
+
+  // Restore everything
+  if(canvasWrap){canvasWrap.style.overflow=prevCWOverflow;canvasWrap.style.width=prevCWWidth;}
+  if(gridWrap){gridWrap.style.overflow=prevGWOverflow;}
+  if(drawerWasOpen)drawer.classList.add('open');
+  scrollContainers.forEach(({el,x,y})=>{el.scrollLeft=x;el.scrollTop=y;});
+
+  return cvs;
+}
+
 async function downloadPNG(){
-  document.getElementById('dl-menu').style.display='none';toast('Preparing...','#1B4F8A');
-  try{const{default:h2c}=await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.min.js');
-    const cvs=await h2c(document.getElementById('canvas'),{scale:2,useCORS:true,backgroundColor:'#F0F2F5',logging:false});
-    const a=document.createElement('a');a.download='roadmap.png';a.href=cvs.toDataURL('image/png');a.click();toast('PNG done');}catch(e){toast('PNG failed','#C62828');}
+  document.getElementById('dl-menu').style.display='none';
+  toast('Preparing export...','#1B4F8A');
+  try{
+    const cvs=await _captureFullCanvas();
+    const a=document.createElement('a');
+    a.download=(state.activeId&&state.roadmaps[state.activeId]?.name||'roadmap')+'.png';
+    a.href=cvs.toDataURL('image/png');a.click();
+    toast('PNG saved');
+  }catch(e){console.error(e);toast('PNG failed','#C62828');}
 }
 async function downloadPDF(){
   document.getElementById('dl-menu').style.display='none';
   const jsPDF=window.jspdf?.jsPDF;if(!jsPDF){toast('PDF loading, retry','#C62828');return;}
-  toast('Preparing...','#1B4F8A');
-  try{const{default:h2c}=await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.min.js');
-    const cvs=await h2c(document.getElementById('canvas'),{scale:2,useCORS:true,backgroundColor:'#F0F2F5',logging:false});
+  toast('Preparing export...','#1B4F8A');
+  try{
+    const cvs=await _captureFullCanvas();
     const imgData=cvs.toDataURL('image/png');
-    const pdf=new jsPDF({orientation:'landscape',unit:'px',format:[cvs.width/2,cvs.height/2]});
-    pdf.addImage(imgData,'PNG',0,0,cvs.width/2,cvs.height/2);pdf.save('roadmap.pdf');toast('PDF done');}catch(e){toast('PDF failed','#C62828');}
+    // Scale to fit A3 landscape (420×297mm) or use actual pixel dimensions
+    const pxW=cvs.width/2,pxH=cvs.height/2;
+    const pdf=new jsPDF({orientation:pxW>pxH?'landscape':'portrait',unit:'px',format:[pxW,pxH]});
+    pdf.addImage(imgData,'PNG',0,0,pxW,pxH);
+    pdf.save((state.activeId&&state.roadmaps[state.activeId]?.name||'roadmap')+'.pdf');
+    toast('PDF saved');
+  }catch(e){console.error(e);toast('PDF failed','#C62828');}
 }
 function downloadSVG(){document.getElementById('dl-menu').style.display='none';toast('Use browser Save As for SVG','#1B4F8A');}
 function exportData(){
@@ -2106,6 +2236,7 @@ function openAddItemDialog(li){
           <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Status</label>
             <select id="ai-status" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--font);outline:none;background:#fff">
               <option value="">No Status</option>
+              <option value="notstarted">Not Started</option>
               <option value="inprogress">In Progress</option>
               <option value="blocked">Blocked</option>
               <option value="done">Done</option>
@@ -2138,7 +2269,7 @@ function confirmAddItemDialog(li){
   const rm=state.roadmaps[state.activeId];if(!rm)return;
   const lane=rm.lanes?.[li];if(!lane)return;
   if(!Array.isArray(lane.pills))lane.pills=[];
-  lane.pills.push({label:name,col:0,type,status,startDate,endDate,assignee,blockers:[],span:1});
+  lane.pills.push({label:name,col:0,type,status,startDate,endDate,assignee,blockers:[],deliverables:[],span:1});
   logAct('create',`added "${name}" to "${lane.name}" in "${rm.name}"`);
   save();closeModal();renderSidebar();renderCanvas();
   toast('Item added','#1A7A4A');
@@ -2256,9 +2387,8 @@ function filterRoadmaps(q){
   });
 }
 
-// Start on hub page — Firebase init() fires after auth
 goToHub();
-/* ── AVATAR HELPERS (for user badge) ── */
+/* ── AVATAR HELPERS ── */
 var FBAV_COLS=['#1B4F8A','#1A7A4A','#B45309','#6A1B9A','#C62828','#0F6E56','#185FA5','#3B6D11'];
 function avColor(n){var h=0;for(var i=0;i<(n||'').length;i++)h=(h*31+n.charCodeAt(i))%FBAV_COLS.length;return FBAV_COLS[h];}
 function avInitials(n){if(!n)return'?';var p=n.trim().split(/\s+/);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase();}
@@ -2268,12 +2398,14 @@ function init(){
   window._initDone=true;
   window._fbDB.ref('roadmaps').once('value').then(function(snap){
     state.roadmaps=snap.exists()?snap.val():{};
-    // Firebase converts [] to null — normalize all arrays
     Object.values(state.roadmaps).forEach(function(rm){
       if(!rm.lanes||!Array.isArray(rm.lanes))rm.lanes=[];
       rm.lanes.forEach(function(lane){
         if(!lane.pills||!Array.isArray(lane.pills))lane.pills=[];
-        lane.pills.forEach(function(p){if(!p.blockers||!Array.isArray(p.blockers))p.blockers=[];});
+        lane.pills.forEach(function(p){
+          if(!p.blockers||!Array.isArray(p.blockers))p.blockers=[];
+          if(!p.deliverables||!Array.isArray(p.deliverables))p.deliverables=[];
+        });
       });
       if(!rm.quarters||!Array.isArray(rm.quarters))rm.quarters=[
         {label:'Q1 · 2026',color:'var(--th-q1)'},{label:'Q2 · 2026',color:'var(--th-q2)'},
@@ -2282,26 +2414,22 @@ function init(){
     });
     renderSelect();
     var ids=Object.keys(state.roadmaps);
-    if(ids.length>0){
-      goToWorkspace();
-      switchRoadmap(ids[0]);
-    } else {
-      goToHub();
-    }
-    // Live sync
-    var isFirst=true;
-    window._ownSaveCount=0;
+    if(ids.length>0){goToWorkspace();switchRoadmap(ids[0]);}
+    else{goToHub();}
+    var isFirst=true;window._ownSaveCount=0;
     window._fbDB.ref('roadmaps').on('value',function(s){
       if(isFirst){isFirst=false;return;}
       if(window._ownSaveCount>0){window._ownSaveCount--;return;}
       var prevId=state.activeId;
       state.roadmaps=s.exists()?s.val():{};
-      // Normalize arrays after live sync
       Object.values(state.roadmaps).forEach(function(rm){
         if(!rm.lanes||!Array.isArray(rm.lanes))rm.lanes=[];
         rm.lanes.forEach(function(lane){
           if(!lane.pills||!Array.isArray(lane.pills))lane.pills=[];
-          lane.pills.forEach(function(p){if(!p.blockers||!Array.isArray(p.blockers))p.blockers=[];});
+          lane.pills.forEach(function(p){
+            if(!p.blockers||!Array.isArray(p.blockers))p.blockers=[];
+            if(!p.deliverables||!Array.isArray(p.deliverables))p.deliverables=[];
+          });
         });
         if(!rm.quarters||!Array.isArray(rm.quarters))rm.quarters=[];
         if(!rm.months||!Array.isArray(rm.months))rm.months=buildDefaultMonths();
@@ -2311,66 +2439,51 @@ function init(){
       else{var ids2=Object.keys(state.roadmaps);if(ids2.length>0)switchRoadmap(ids2[0]);}
       toast('Roadmap updated by a team member','#1B4F8A');
     });
-    // Activity log
     window._fbDB.ref('activity').on('value',function(s){
       if(!s.exists()){renderActLog([]);return;}
       var entries=Object.values(s.val()).sort(function(a,b){return b.ts-a.ts;}).slice(0,50);
       renderActLog(entries);
     });
   }).catch(function(e){
-    console.error('DB load error:',e);
+    console.error('DB load:',e);
     var el=document.getElementById('canvas');
-    if(el)el.innerHTML='<div style="padding:60px 20px;text-align:center;color:#C62828;font-size:13px">Failed to load roadmaps. Please refresh the page.</div>';
+    if(el)el.innerHTML='<div style="padding:60px;text-align:center;color:#C62828;font-size:13px">Failed to load. Please refresh.</div>';
   });
 }
 
-/* ── AUTH FUNCTIONS ── */
 function authSignIn(){
-  var btn=document.getElementById('auth-btn');
-  var msg=document.getElementById('auth-msg');
-  var err=document.getElementById('auth-err');
+  var btn=document.getElementById('auth-btn'),msg=document.getElementById('auth-msg'),err=document.getElementById('auth-err');
   btn.disabled=true;btn.style.opacity='0.6';
-  msg.style.display='block';msg.textContent='Opening Google sign-in...';
-  err.style.display='none';
-  if(typeof firebase==='undefined'){
-    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
-    err.style.display='block';err.textContent='Firebase failed to load. Please refresh the page.';return;
-  }
-  if(typeof firebase.auth!=='function'){
-    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
-    err.style.display='block';err.textContent='Firebase Auth not ready. Please refresh the page.';return;
-  }
+  if(msg){msg.style.display='block';msg.textContent='Opening Google sign-in...';}
+  if(err)err.style.display='none';
+  if(typeof firebase==='undefined'){btn.disabled=false;btn.style.opacity='1';if(msg)msg.style.display='none';if(err){err.style.display='block';err.textContent='Firebase failed to load. Please refresh.';}return;}
+  if(typeof firebase.auth!=='function'){btn.disabled=false;btn.style.opacity='1';if(msg)msg.style.display='none';if(err){err.style.display='block';err.textContent='Auth not ready. Please refresh.';}return;}
   var provider;
   try{provider=new firebase.auth.GoogleAuthProvider();}
-  catch(e){btn.disabled=false;btn.style.opacity='1';msg.style.display='none';err.style.display='block';err.textContent='Auth error: '+e.message;return;}
+  catch(e){btn.disabled=false;btn.style.opacity='1';if(msg)msg.style.display='none';if(err){err.style.display='block';err.textContent='Auth error: '+e.message;}return;}
   firebase.auth().signInWithPopup(provider).then(function(result){
     var email=(result.user.email||'').toLowerCase();
     if(!email.endsWith('@sootchy.com')){
       return firebase.auth().signOut().then(function(){
-        btn.disabled=false;msg.style.display='none';
-        err.style.display='block';err.textContent='Access denied: '+result.user.email+' is not a @sootchy.com account.';
+        btn.disabled=false;if(msg)msg.style.display='none';
+        if(err){err.style.display='block';err.textContent='Access denied: '+result.user.email+' is not a @sootchy.com account.';}
       });
     }
   }).catch(function(e){
-    btn.disabled=false;btn.style.opacity='1';msg.style.display='none';
+    btn.disabled=false;btn.style.opacity='1';if(msg)msg.style.display='none';
     var silent=['auth/popup-closed-by-user','auth/cancelled-popup-request'];
     if(silent.indexOf(e.code)>-1)return;
-    err.style.display='block';
-    if(e.code==='auth/popup-blocked')err.textContent='Popup was blocked. Please allow popups for this site and try again.';
-    else if(e.code==='auth/network-request-failed')err.textContent='Network error. Please check your connection and try again.';
-    else err.textContent='Sign-in failed: '+(e.code||e.message||'Unknown error');
+    if(err){err.style.display='block';
+      if(e.code==='auth/popup-blocked')err.textContent='Popup blocked. Allow popups and try again.';
+      else if(e.code==='auth/network-request-failed')err.textContent='Network error. Check connection.';
+      else err.textContent='Sign-in failed: '+(e.code||e.message||'Unknown error');
+    }
   });
 }
-function authSignOut(){
-  if(!confirm('Sign out?'))return;
-  firebase.auth().signOut();
-}
+function authSignOut(){if(!confirm('Sign out?'))return;firebase.auth().signOut();}
 </script>
 
-<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -2427,10 +2540,10 @@ firebase.auth().onAuthStateChanged(function(user){
 
 <!-- LOGS MODAL -->
 <div id="logs-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center" onclick="if(event.target===this)closeLogs()">
-  <div style="background:#fff;border-radius:12px;width:560px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border)">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:#FAFBFC">
-      <span style="font-size:14px;font-weight:700">Activity Log</span>
-      <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--mid);font-family:var(--font)" onclick="closeLogs()">Close ✕</button>
+  <div style="background:#fff;border-radius:12px;width:560px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #DDE2EA">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #DDE2EA;background:#FAFBFC">
+      <span style="font-size:14px;font-weight:700;color:#1A1A1A">Activity Log</span>
+      <button style="background:none;border:none;cursor:pointer;font-size:13px;color:#6B7280;font-family:var(--font)" onclick="closeLogs()">Close ✕</button>
     </div>
     <div id="logs-modal-body" style="overflow-y:auto;flex:1;padding:0"></div>
   </div>
