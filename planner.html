@@ -110,9 +110,9 @@ html,body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);colo
 /* today line — fixed overlay, never clipped by canvas-outer */
 .today-overlay{position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:200}
 .today-line-fixed{position:fixed;width:2px;background:#e53e3e;pointer-events:none;transform:translateX(-50%)}
-.today-drag-handle{position:fixed;width:20px;background:transparent;cursor:ew-resize;pointer-events:auto;transform:translateX(-50%);display:flex;align-items:flex-start;justify-content:center}
+.today-drag-handle{position:fixed;width:20px;background:transparent;cursor:ew-resize;pointer-events:none;transform:translateX(-50%);display:flex;align-items:flex-start;justify-content:center}
 .today-drag-handle::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:#e53e3e;transform:translateX(-50%)}
-.today-label{position:fixed;background:#e53e3e;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;letter-spacing:.03em;cursor:ew-resize;user-select:none;pointer-events:auto;transform:translateX(-50%)}
+.today-label{position:fixed;background:#e53e3e;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;letter-spacing:.03em;cursor:ew-resize;user-select:none;pointer-events:none;transform:translateX(-50%)}
 
 /* ghost */
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;border-radius:999px;height:28px;display:flex;align-items:center;padding:0 20px 0 9px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap;box-shadow:var(--sh-drag);transform:rotate(1.5deg) scale(1.04)}
@@ -555,7 +555,9 @@ function _todayGetHeaderRect(){
 function renderTodayLine(){
   if(todayPct === null){
     _todayHandle.style.display = 'none';
+    _todayHandle.style.pointerEvents = 'none';
     _todayLabel.style.display  = 'none';
+    _todayLabel.style.pointerEvents = 'none';
     _todayLines.forEach(l => l.remove());
     _todayLines.length = 0;
     return;
@@ -572,11 +574,13 @@ function renderTodayLine(){
   _todayHandle.style.left    = x + 'px';
   _todayHandle.style.top     = hdrRect.top + 'px';
   _todayHandle.style.height  = hdrRect.height + 'px';
+  _todayHandle.style.pointerEvents = 'auto';
 
   // label sits inside header
   _todayLabel.style.display = 'block';
   _todayLabel.style.left    = x + 'px';
   _todayLabel.style.top     = (hdrRect.top + 4) + 'px';
+  _todayLabel.style.pointerEvents = 'auto';
 
   // one line per lane row
   const laneRows = [...document.querySelectorAll('.lane-row')];
@@ -837,7 +841,13 @@ function endDrag(e){
   document.querySelectorAll('.col-hl').forEach(h=>h.classList.remove('show'));
   if(!dragPill) return;
   document.querySelectorAll('.pill-item.dragging').forEach(el=>el.style.visibility='hidden');
+  // temporarily disable today overlays so they don't intercept elementFromPoint
+  const _thl=_todayHandle.style.pointerEvents, _tll=_todayLabel.style.pointerEvents;
+  _todayHandle.style.pointerEvents='none'; _todayLabel.style.pointerEvents='none';
+  _todayLines.forEach(l=>{ l._pe=l.style.pointerEvents; l.style.pointerEvents='none'; });
   const under=document.elementFromPoint(e.clientX,e.clientY);
+  _todayHandle.style.pointerEvents=_thl; _todayLabel.style.pointerEvents=_tll;
+  _todayLines.forEach(l=>{ l.style.pointerEvents=l._pe||'none'; });
   document.querySelectorAll('.pill-item').forEach(el=>{ el.style.visibility=''; el.classList.remove('dragging'); });
   const targetCanv=under?under.closest('.lane-canvas'):null;
   if(targetCanv){
@@ -1163,7 +1173,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
