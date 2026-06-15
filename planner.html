@@ -971,9 +971,10 @@ function confirmAddItem(){
   if(!label){ document.getElementById('aipName').focus(); return; }
   const type = aipSelectedType || types[0].id;
   const np = {id:'p'+(pidCounter++), pct:.01, wpct:.22, type, color:'', label, start:'', end:''};
-  aipLane.pills.push(np);
-  buildLanes();
+  const targetLane = aipLane;
   closeAddItemPop();
+  targetLane.pills.push(np);
+  buildLanes();
 }
 
 function closeAddItemPop(){
@@ -1366,7 +1367,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '2.2';
+const APP_VERSION = '2.3';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
