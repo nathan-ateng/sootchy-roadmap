@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quick Map — Sootchy</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f8fa;--surface:#fff;--border:#e2e5ea;--text:#1a1d23;--muted:#6b7280;
+  --radius:999px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --sh-drag:0 8px 24px rgba(0,0,0,.16),0 3px 8px rgba(0,0,0,.1);
+}
+html,body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 24px}
+
+/* ── back nav ── */
+.back-nav{display:flex;align-items:center;margin-bottom:18px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1.5px solid #e2e5ea;background:#fff;font-size:12px;font-weight:500;color:#1a1d23;cursor:pointer;text-decoration:none;transition:all .13s;font-family:inherit}
+.back-btn:hover{border-color:#4a90d9;color:#4a90d9;background:#eef4fc}
+.back-btn svg{flex-shrink:0}
+
+/* ── header ── */
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.header-title-wrap{display:flex;flex-direction:column;gap:4px}
+.roadmap-title{font-size:30px;font-weight:700;letter-spacing:-.5px;outline:none;cursor:text;border-radius:4px;padding:2px 6px;margin:-2px -6px;transition:background .12s;min-width:80px}
+.roadmap-title:hover{background:rgba(0,0,0,.04)}
+.roadmap-title:focus{background:#fff;outline:2px solid #4a90d9;outline-offset:2px}
+.roadmap-subtitle{font-size:13px;color:var(--muted);outline:none;cursor:text;border-radius:4px;padding:2px 6px;margin-left:-6px;transition:background .12s;min-width:60px}
+.roadmap-subtitle:hover{background:rgba(0,0,0,.04)}
+.roadmap-subtitle:focus{background:#fff;outline:2px solid #4a90d9;outline-offset:2px}
+.meta-block{font-size:11.5px;color:var(--muted);text-align:right;line-height:2.1}
+.meta-val{outline:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:inherit;color:var(--muted);text-align:right;min-width:60px;cursor:text;transition:border-color .15s}
+.meta-val:hover{border-bottom-color:#aab0bb}
+.meta-val:focus{border-bottom-color:#4a90d9;color:var(--text)}
+
+/* ── legend ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted)}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ── toolbar ── */
+.toolbar{display:flex;align-items:center;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.tlabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:2px}
+.tbtn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:all .13s;font-family:inherit;white-space:nowrap}
+.tbtn:hover{border-color:#aab0bb;background:#f0f2f5}
+.tbtn .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.tbtn.active{border-color:#4a90d9;background:#eef4fc;color:#2a6db5}
+.tbtn-dark{padding:6px 14px;border-radius:var(--radius);border:none;background:var(--text);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .13s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tbtn-dark:hover{opacity:.82}
+.tbtn-dark.secondary{background:#fff;color:var(--text);border:1.5px solid var(--border)}
+.tbtn-dark.secondary:hover{background:#f0f2f5}
+.toolbar-right{margin-left:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+
+/* ── canvas wrapper ── */
+.canvas-outer{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+.canvas-header-row{display:flex}
+.lane-header-stub{width:160px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.quarters-header{flex:1;display:flex;overflow:hidden}
+.q-head{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;min-height:42px;border-bottom:1px solid rgba(0,0,0,.1);position:relative}
+.q-head:not(:last-child){border-right:1px solid rgba(0,0,0,.1)}
+.q-head-title{outline:none;background:transparent;border:none;color:#fff;font-family:inherit;font-size:13px;font-weight:600;text-align:center;cursor:text;border-radius:4px;padding:2px 4px;min-width:20px}
+.q-head-title:focus{background:rgba(255,255,255,.18)}
+.q-head-actions{display:none;gap:3px;position:absolute;right:5px;top:50%;transform:translateY(-50%)}
+.q-head:hover .q-head-actions{display:flex}
+.q-icon-btn{display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:10px;cursor:pointer;font-family:inherit;transition:background .12s}
+.q-icon-btn:hover{background:rgba(255,255,255,.45)}
+.add-q-btn{width:36px;flex-shrink:0;background:#f0f2f5;border:none;border-left:1px solid var(--border);border-bottom:1px solid var(--border);color:var(--muted);font-size:20px;cursor:pointer;font-family:inherit;transition:background .13s;display:flex;align-items:center;justify-content:center}
+.add-q-btn:hover{background:#e4e7ed;color:var(--text)}
+
+/* ── lanes ── */
+.lanes-area{display:flex;flex-direction:column}
+.lane-row{display:flex;border-bottom:1px solid var(--border)}
+.lane-row:last-child{border-bottom:none}
+.lane-label{width:160px;flex-shrink:0;background:#fbfcfd;border-right:1px solid var(--border);padding:12px 12px;display:flex;flex-direction:column;gap:4px}
+.lane-name{font-size:13px;font-weight:600;outline:none;cursor:text;border-radius:4px;padding:2px 4px;margin:-2px -4px;transition:background .12s}
+.lane-name:hover{background:#f0f2f5}
+.lane-name:focus{background:#fff;outline:2px solid #4a90d9;outline-offset:1px}
+.lane-desc{font-size:11px;color:var(--muted);outline:none;cursor:text;border-radius:4px;padding:2px 4px;margin-left:-4px;line-height:1.5;transition:background .12s}
+.lane-desc:hover{background:#f0f2f5}
+.lane-desc:focus{background:#fff;outline:2px solid #4a90d9;outline-offset:1px}
+.lane-actions{display:flex;flex-direction:row;gap:5px;margin-top:8px;opacity:0;transition:opacity .15s}
+.lane-label:hover .lane-actions{opacity:1}
+.lane-icon-btn{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:transparent;font-size:13px;cursor:pointer;font-family:inherit;transition:all .12s;color:var(--muted);flex-shrink:0}
+.lane-icon-btn:hover{border-color:#4a90d9;background:rgba(74,144,217,.07);color:#4a90d9}
+.lane-icon-btn.danger:hover{border-color:#e53e3e;background:rgba(229,62,62,.06);color:#e53e3e}
+.lane-canvas{flex:1;position:relative;overflow:visible;min-height:120px}
+
+/* ── pills ── */
+.pill-item{position:absolute;height:28px;border-radius:999px;display:flex;align-items:center;padding:0 26px 0 9px;cursor:grab;user-select:none;box-shadow:var(--sh);z-index:10;min-width:60px;transition:box-shadow .13s}
+.pill-item:hover{box-shadow:0 3px 8px rgba(0,0,0,.15)}
+.pill-item:active{cursor:grabbing}
+.pill-item.dragging{opacity:.3;z-index:1}
+.pill-text{font-size:11px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;outline:none;cursor:text;min-width:20px}
+.pill-text:focus{background:rgba(255,255,255,.18);border-radius:3px;padding:0 3px;cursor:text;white-space:normal}
+.pill-rhandle{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;cursor:ew-resize;font-size:8px;color:#fff;flex-shrink:0;transition:background .12s}
+.pill-rhandle:hover{background:rgba(255,255,255,.5)}
+.pill-del{position:absolute;right:-7px;top:-5px;width:14px;height:14px;border-radius:50%;background:#e53e3e;border:none;color:#fff;font-size:8px;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;z-index:20}
+.pill-item:hover .pill-del{display:flex}
+.pill-dates{position:absolute;font-size:9.5px;color:var(--muted);white-space:nowrap;top:32px;left:2px;cursor:pointer}
+.pill-dates:hover{text-decoration:underline;color:#4a90d9}
+
+/* col highlight */
+.col-hl{position:absolute;top:0;bottom:0;background:rgba(74,144,217,.06);pointer-events:none;display:none;z-index:0}
+.col-hl.show{display:block}
+
+/* ghost */
+.drag-ghost{position:fixed;pointer-events:none;z-index:9999;border-radius:999px;height:28px;display:flex;align-items:center;padding:0 20px 0 9px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap;box-shadow:var(--sh-drag);transform:rotate(1.5deg) scale(1.04)}
+
+/* ── context menu ── */
+.ctx-menu{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:5px;z-index:10000;min-width:168px;display:none}
+.ctx-menu.open{display:block}
+.ctx-sec{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:4px 8px 2px}
+.ctx-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text);transition:background .1s}
+.ctx-item:hover{background:#f0f2f5}
+.ctx-item .cdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ctx-div{height:1px;background:var(--border);margin:4px 0}
+.ctx-danger{color:#e53e3e}
+.ctx-danger:hover{background:#fff5f5}
+
+/* ── date popover ── */
+.date-pop{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:12px 14px;z-index:10000;display:none;min-width:200px}
+.date-pop.open{display:block}
+.date-pop label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.date-pop input{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:12px;color:var(--text);outline:none}
+.date-pop input:focus{border-color:#4a90d9}
+.dp-row{margin-bottom:10px}
+.dp-actions{display:flex;gap:6px;margin-top:10px}
+.dp-btn{flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font:inherit;font-size:12px;cursor:pointer;transition:background .12s}
+.dp-btn:hover{background:#f0f2f5}
+.dp-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+.dp-btn.primary:hover{opacity:.85}
+
+/* ── color picker panel ── */
+.color-panel{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.13);padding:14px 16px;z-index:10001;display:none;min-width:240px}
+.color-panel.open{display:block}
+.color-panel h3{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.cp-section{margin-bottom:12px}
+.cp-section-label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.cp-swatches{display:flex;flex-wrap:wrap;gap:6px}
+.cp-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s,border-color .12s;flex-shrink:0}
+.cp-swatch:hover{transform:scale(1.2)}
+.cp-swatch.selected{border-color:var(--text)}
+.cp-custom{display:flex;align-items:center;gap:7px;margin-top:8px}
+.cp-custom input[type=color]{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:1px}
+.cp-custom span{font-size:11px;color:var(--muted)}
+.cp-close{margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid var(--border);background:transparent;font:inherit;font-size:12px;cursor:pointer;color:var(--muted);transition:background .12s}
+.cp-close:hover{background:#f0f2f5}
+
+/* ── add item popover ── */
+.add-item-pop{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:14px 16px;z-index:10002;display:none;width:260px}
+.add-item-pop.open{display:block}
+.add-item-pop h3{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.aip-label{font-size:11px;color:var(--muted);margin-bottom:4px;display:block}
+.aip-input{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:7px;font:inherit;font-size:12px;color:var(--text);outline:none;margin-bottom:10px}
+.aip-input:focus{border-color:#4a90d9}
+.aip-types{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.aip-type-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit;transition:all .12s}
+.aip-type-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.aip-type-btn.selected{border-width:2px;font-weight:600}
+.aip-actions{display:flex;gap:7px}
+.aip-btn{flex:1;padding:6px;border-radius:7px;border:1px solid var(--border);background:var(--surface);font:inherit;font-size:12px;cursor:pointer;transition:background .12s}
+.aip-btn:hover{background:#f0f2f5}
+.aip-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+.aip-btn.primary:hover{opacity:.85}
+
+/* ── type editor panel ── */
+.type-panel{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:14px 16px;z-index:10002;display:none;width:280px}
+.type-panel.open{display:block}
+.type-panel h3{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.type-row{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;transition:background .1s}
+.type-row:hover{background:#f5f6f8}
+.type-color-swatch{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:transform .12s}
+.type-color-swatch:hover{transform:scale(1.2);border-color:#aab0bb}
+.type-name-input{flex:1;border:none;background:transparent;font:inherit;font-size:12px;color:var(--text);outline:none;padding:2px 4px;border-radius:4px}
+.type-name-input:focus{background:#f0f2f5}
+.type-del-btn{width:18px;height:18px;border-radius:50%;border:none;background:transparent;color:#ccc;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.type-del-btn:hover{background:#fee2e2;color:#e53e3e}
+.type-add-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.type-add-btn{flex:1;padding:5px 10px;border-radius:6px;border:1.5px dashed #ccd0d8;background:transparent;font:inherit;font-size:12px;color:var(--muted);cursor:pointer;transition:all .13s;text-align:left}
+.type-add-btn:hover{border-color:#4a90d9;color:#4a90d9;background:rgba(74,144,217,.04)}
+.tp-close{margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid var(--border);background:transparent;font:inherit;font-size:12px;cursor:pointer;color:var(--muted);transition:background .12s}
+.tp-close:hover{background:#f0f2f5}
+/* inline type swatch picker */
+.tswatch-pop{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.13);padding:10px;z-index:10003;display:none;width:196px}
+.tswatch-pop.open{display:block}
+.tswatch-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tswatch-item{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s,border-color .12s}
+.tswatch-item:hover{transform:scale(1.2)}
+.tswatch-item.sel{border-color:var(--text)}
+.tswatch-custom{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.tswatch-custom input[type=color]{width:26px;height:26px;border:1px solid var(--border);border-radius:5px;cursor:pointer;padding:1px}
+
+/* ── add lane btn ── */
+.add-lane-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px dashed #ccd0d8;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .13s}
+.add-lane-btn:hover{border-color:#4a90d9;color:#4a90d9;background:rgba(74,144,217,.04)}
+
+/* ── footer ── */
+.footer{margin-top:16px;text-align:center;font-size:11.5px;color:var(--muted)}
+.footer strong{color:var(--text)}
+
+/* ── export overlay ── */
+.export-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20000;display:none;align-items:center;justify-content:center}
+.export-overlay.show{display:flex}
+.export-box{background:#fff;border-radius:12px;padding:24px 28px;text-align:center;min-width:220px}
+.export-box p{font-size:13px;color:var(--muted);margin-top:6px}
+.spinner{width:32px;height:32px;border:3px solid #e2e5ea;border-top-color:#4a90d9;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── export-hide class: hidden during PNG/PDF capture ── */
+.export-hide{}
+body.exporting .export-hide{display:none!important}
+body.exporting .pill-del{display:none!important}
+body.exporting .pill-rhandle{display:none!important}
+body.exporting .q-head-actions{display:none!important}
+body.exporting .lane-actions{display:none!important}
+body.exporting .add-q-btn{display:none!important}
+body.exporting .roadmap-title{outline:none!important;background:transparent!important}
+body.exporting .roadmap-subtitle{outline:none!important;background:transparent!important}
+body.exporting .meta-val{border-bottom-color:transparent!important}
+body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;color:var(--muted)!important}
+</style>
+</head>
+<body>
+
+<div id="pageContent">
+
+<!-- ── BACK NAV ── -->
+<div class="back-nav export-hide">
+  <a class="back-btn" href="/" title="Back to Sootchy Roadmap">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back to Roadmap
+  </a>
+</div>
+
+<!-- ── PAGE HEADER ── -->
+<div class="page-header">
+  <div class="header-title-wrap">
+    <div class="roadmap-title" id="roadmapTitle" contenteditable="true" spellcheck="false">Roadmap</div>
+    <div class="roadmap-subtitle" id="roadmapSubtitle" contenteditable="true" spellcheck="false">Current focus is on establishing the foundation</div>
+  </div>
+  <div class="meta-block">
+    <div>Version:&nbsp;<input class="meta-val" id="metaVersion" value="Nov 25th 2025" spellcheck="false"></div>
+    <div>Published by:&nbsp;<input class="meta-val" id="metaPublished" value="Deepesh Ojha" spellcheck="false"></div>
+    <div>Leadership Approved:&nbsp;<input class="meta-val" id="metaApproved" value="TBD" spellcheck="false" style="color:#4a90d9;font-weight:600"></div>
+  </div>
+</div>
+
+<!-- ── LEGEND (dynamic) ── -->
+<div class="legend" id="legendBar"></div>
+
+<!-- ── TOOLBAR (dynamic) ── -->
+<div class="toolbar export-hide" id="toolbar">
+  <span class="tlabel">Add</span>
+  <div id="typeButtons" style="display:flex;gap:7px;flex-wrap:wrap;align-items:center"></div>
+  <div class="toolbar-right">
+    <button class="tbtn-dark secondary" onclick="exportPNG()">⬇ PNG</button>
+    <button class="tbtn-dark secondary" onclick="exportPDF()">⬇ PDF</button>
+    <button class="tbtn-dark secondary" onclick="exportJSON()" title="Download JSON to save your work">⬇ JSON</button>
+    <button class="tbtn-dark secondary" onclick="triggerUpload()" title="Upload a saved JSON file to restore your roadmap">⬆ Load JSON</button>
+    <input type="file" id="jsonUploadInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
+    <div id="autoSaveLabel" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:4px"></div>
+  </div>
+</div>
+
+<!-- ── GRID ── -->
+<div class="canvas-outer" id="canvasOuter">
+  <div class="canvas-header-row">
+    <div class="lane-header-stub">Swim Lane</div>
+    <div class="quarters-header" id="quartersHeader"></div>
+    <button class="add-q-btn export-hide" onclick="addQuarter()" title="Add quarter">+</button>
+  </div>
+  <div class="lanes-area" id="lanesArea"></div>
+</div>
+
+<button class="add-lane-btn export-hide" onclick="addLane()">+ Add swim lane</button>
+
+<div class="footer export-hide">Timelines are rough targets. &nbsp;<strong>All matters are subject to discussion.</strong>
+  &nbsp;·&nbsp; Drag pills anywhere · Resize ⟺ to span quarters · Right-click for options · Click date to edit · 🎨 to theme</div>
+
+</div><!-- /pageContent -->
+
+<!-- ── CONTEXT MENU (dynamic type list) ── -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-sec">Change type</div>
+  <div id="ctxTypeItems"></div>
+  <div class="ctx-div"></div>
+  <div class="ctx-item" onclick="ctxColorPill()">🎨 Change pill color</div>
+  <div class="ctx-item" onclick="ctxEditDates()">📅 Edit dates</div>
+  <div class="ctx-div"></div>
+  <div class="ctx-item ctx-danger" onclick="ctxDelete()">✕ Delete item</div>
+</div>
+
+<!-- ── DATE POPOVER ── -->
+<div class="date-pop" id="datePop">
+  <div class="dp-row"><label>Start date</label><input type="text" id="dpStart" placeholder="e.g. Jan 1"></div>
+  <div class="dp-row"><label>End date</label><input type="text" id="dpEnd" placeholder="e.g. Mar 31"></div>
+  <div class="dp-actions">
+    <button class="dp-btn" onclick="closeDatePop()">Cancel</button>
+    <button class="dp-btn primary" onclick="saveDates()">Save</button>
+  </div>
+</div>
+
+<!-- ── COLOR PANEL ── -->
+<div class="color-panel" id="colorPanel">
+  <h3 id="cpTitle">Color</h3>
+  <div class="cp-section">
+    <div class="cp-section-label">Presets</div>
+    <div class="cp-swatches" id="cpSwatches"></div>
+  </div>
+  <div class="cp-custom">
+    <input type="color" id="cpCustom" value="#4a90d9">
+    <span>Custom color</span>
+  </div>
+  <button class="cp-close" onclick="closeColorPanel()">Done</button>
+</div>
+
+<!-- ── ADD ITEM POPOVER ── -->
+<div class="add-item-pop" id="addItemPop">
+  <h3>Add item</h3>
+  <label class="aip-label">Name</label>
+  <input class="aip-input" id="aipName" placeholder="Item name" spellcheck="false">
+  <label class="aip-label">Type</label>
+  <div class="aip-types" id="aipTypes"></div>
+  <div class="aip-actions">
+    <button class="aip-btn" onclick="closeAddItemPop()">Cancel</button>
+    <button class="aip-btn primary" onclick="confirmAddItem()">Add</button>
+  </div>
+</div>
+
+<!-- ── TYPE EDITOR PANEL ── -->
+<div class="type-panel" id="typePanel">
+  <h3>Manage types</h3>
+  <div id="typeRows"></div>
+  <div class="type-add-row">
+    <button class="type-add-btn" onclick="addType()">+ Add new type</button>
+  </div>
+  <button class="tp-close" onclick="closeTypePanel()">Done</button>
+</div>
+<!-- ── INLINE SWATCH PICKER ── -->
+<div class="tswatch-pop" id="tswatchPop">
+  <div class="tswatch-grid" id="tswatchGrid"></div>
+  <div class="tswatch-custom">
+    <input type="color" id="tswatchCustom">
+    <span>Custom</span>
+  </div>
+</div>
+
+<!-- ── EXPORT OVERLAY ── -->
+<div class="export-overlay" id="exportOverlay">
+  <div class="export-box">
+    <div class="spinner"></div>
+    <div style="font-size:14px;font-weight:600">Exporting…</div>
+    <p id="exportMsg">Capturing page</p>
+  </div>
+</div>
+
+<script>
+// ─── PALETTE ──────────────────────────────────────────────────────────────────
+const PRESETS = ['#1a1d23','#2bbfa4','#9ca3af','#34c471','#4a90d9','#f5a623','#e53e3e','#8b5cf6','#e07b54','#0d9488','#0ea5e9','#f59e0b','#10b981','#ef4444','#6366f1','#ec4899','#64748b','#78716c'];
+const Q_COLORS = ['#2bbfa4','#f5a623','#555e6b','#4a90d9','#e07b54','#8b5cf6','#0d9488','#e53e3e'];
+let qColorIdx = 4;
+let typeCounter = 20;
+
+// ─── TYPES (mutable — add/delete/recolor) ─────────────────────────────────────
+let types = [
+  {id:'design',  label:'Product Design',   color:'#1a1d23'},
+  {id:'dev',     label:'Development',       color:'#2bbfa4'},
+  {id:'consider',label:'Being Considered',  color:'#9ca3af'},
+  {id:'biz',     label:'Biz / GTM',         color:'#34c471'},
+  {id:'third',   label:'3rd Party Dev',     color:'#4a90d9'},
+  {id:'mkt',     label:'Marketing',         color:'#f5a623'},
+  {id:'blocked', label:'Blocked',           color:'#e53e3e'},
+];
+function getTypeColor(tid){ const t=types.find(x=>x.id===tid); return t?t.color:'#9ca3af'; }
+function getTypeLabel(tid){ const t=types.find(x=>x.id===tid); return t?t.label:tid; }
+// Proxy so existing TYPE_COLORS[x] calls still work
+const TYPE_COLORS = new Proxy({},{get:(_,k)=>getTypeColor(k)});
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+let quarters = [
+  {id:'q0',label:'Q4-2025',color:'#2bbfa4'},
+  {id:'q1',label:'Q1-2026',color:'#f5a623'},
+  {id:'q2',label:'Q2-2026',color:'#555e6b'},
+  {id:'q3',label:'Q3-2026',color:'#4a90d9'},
+];
+let lanes = [
+  { id:'l0', name:'Growth', desc:'Acquire States, Employers and Employees', pills:[
+    {id:'p0', pct:.01,wpct:.23,type:'design',color:'',label:'MVP 1 - Go Live',start:'Oct 1',end:'Dec 31'},
+    {id:'p1', pct:.01,wpct:.23,type:'dev',color:'',label:'Copy & UX',start:'Nov 1',end:'Dec 15'},
+    {id:'p2', pct:.26,wpct:.23,type:'dev',color:'',label:'CollegeWell',start:'Jan 5',end:'Mar 20'},
+    {id:'p3', pct:.26,wpct:.11,type:'dev',color:'',label:'Catalis',start:'Jan 5',end:'Feb 15'},
+    {id:'p4', pct:.26,wpct:.11,type:'consider',color:'',label:'KYC',start:'Jan 20',end:'Mar 1'},
+    {id:'p5', pct:.26,wpct:.23,type:'consider',color:'',label:'KYB',start:'Jan 1',end:'Mar 31'},
+    {id:'p6', pct:.26,wpct:.23,type:'consider',color:'',label:'Money Movement',start:'Feb 1',end:'Mar 31'},
+    {id:'p7', pct:.26,wpct:.23,type:'dev',color:'',label:'Increase Payroll Providers',start:'Jan 1',end:'Mar 31'},
+    {id:'p8', pct:.26,wpct:.23,type:'dev',color:'',label:'Sootchy Website',start:'Jan 15',end:'Mar 31'},
+    {id:'p9', pct:.26,wpct:.48,type:'mkt',color:'',label:'Marketing: Pilot',start:'Feb 1',end:'Jun 30'},
+    {id:'p10',pct:.51,wpct:.23,type:'design',color:'',label:'UGMA/UTMA',start:'Apr 1',end:'Jun 30'},
+    {id:'p11',pct:.51,wpct:.11,type:'biz',color:'',label:'MET: Contract Sign',start:'Apr 1',end:'May 15'},
+    {id:'p12',pct:.51,wpct:.23,type:'biz',color:'',label:'MET: Legal Review',start:'Apr 15',end:'Jun 30'},
+    {id:'p13',pct:.76,wpct:.23,type:'consider',color:'',label:'MET Phase 1',start:'Jul 1',end:'Sep 30'},
+    {id:'p14',pct:.76,wpct:.23,type:'consider',color:'',label:'Direct to Consumer 529',start:'Jul 1',end:'Sep 30'},
+    {id:'p15',pct:.76,wpct:.23,type:'consider',color:'',label:'UGMA',start:'Jul 1',end:'Sep 30'},
+    {id:'p16',pct:.76,wpct:.23,type:'consider',color:'',label:'Distribution',start:'Aug 1',end:'Sep 30'},
+    {id:'p17',pct:.76,wpct:.23,type:'consider',color:'',label:'Tech Consolidation',start:'Jul 15',end:'Sep 30'},
+    {id:'p18',pct:.76,wpct:.23,type:'consider',color:'',label:'Savings Plan',start:'Aug 1',end:'Sep 30'},
+    {id:'p19',pct:.76,wpct:.23,type:'consider',color:'',label:'Admin Portal',start:'Aug 1',end:'Sep 30'},
+    {id:'p20',pct:.76,wpct:.23,type:'consider',color:'',label:'Advisor-Driven Plan',start:'Jul 1',end:'Sep 30'},
+    {id:'p21',pct:.76,wpct:.23,type:'consider',color:'',label:'Broker-Dealer',start:'Sep 1',end:'Sep 30'},
+    {id:'p22',pct:.76,wpct:.23,type:'consider',color:'',label:'Trump BBB (?)',start:'Jul 1',end:'Sep 30'},
+    {id:'p23',pct:.76,wpct:.23,type:'consider',color:'',label:'Vesting & Interest',start:'Aug 1',end:'Sep 30'},
+  ]},
+  { id:'l1', name:'Efficiency / Operations', desc:"Improve economics, manage risk and support internal teams' goals", pills:[
+    {id:'p30',pct:.01,wpct:.23,type:'dev',color:'',label:'CS Process Rollout',start:'Oct 1',end:'Nov 30'},
+    {id:'p31',pct:.01,wpct:.23,type:'design',color:'',label:'CRM Integration',start:'Nov 1',end:'Dec 31'},
+    {id:'p32',pct:.26,wpct:.23,type:'consider',color:'',label:'Load Testing',start:'Jan 1',end:'Mar 31'},
+    {id:'p33',pct:.76,wpct:.23,type:'consider',color:'',label:'CRM',start:'Jul 1',end:'Sep 30'},
+  ]},
+  { id:'l2', name:'Platform & Cloud', desc:'Scalable and flexible platform enabling future opportunities', pills:[
+    {id:'p40',pct:.01,wpct:.23,type:'dev',color:'',label:'Cloud Infra Setup',start:'Oct 1',end:'Dec 31'},
+    {id:'p41',pct:.01,wpct:.48,type:'dev',color:'',label:'Security & SOC2',start:'Oct 1',end:'Mar 31'},
+  ]},
+];
+
+const PILL_H = 28, PILL_GAP = 6, PILL_TOP = 12;
+let pidCounter = 100, lidCounter = 10;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let pendingType=null, activeBtn=null;
+let dragPill=null, dragLaneId=null, ghost=null, dragOX=0, dragOY=0;
+let resizePill=null, resizeLaneId=null, resizeStartX=0, resizeStartW=0;
+let ctxPill=null, ctxLaneId=null;
+let datePill=null, dateLaneId=null;
+let cpTarget=null, cpType=null, cpExtra=null;
+
+// ─── BUILD ────────────────────────────────────────────────────────────────────
+function build(){ buildHeaders(); buildLanes(); scheduleSave(); }
+
+function buildHeaders(){
+  const hdr = document.getElementById('quartersHeader');
+  hdr.innerHTML='';
+  quarters.forEach((q,i)=>{
+    const h = document.createElement('div');
+    h.className='q-head'; h.style.background=q.color;
+    const t = document.createElement('input');
+    t.className='q-head-title'; t.value=q.label; t.spellcheck=false;
+    t.addEventListener('change',()=>{ q.label=t.value.trim(); });
+    t.addEventListener('keydown',e=>{ if(e.key==='Enter') t.blur(); });
+    const acts = document.createElement('div');
+    acts.className='q-head-actions';
+    // color btn
+    const cb = document.createElement('button');
+    cb.className='q-icon-btn'; cb.title='Change color'; cb.textContent='●';
+    cb.addEventListener('click',e=>{ e.stopPropagation(); openColorPanel('quarter',i,null,e); });
+    // del btn
+    const db = document.createElement('button');
+    db.className='q-icon-btn'; db.title='Delete'; db.textContent='×';
+    db.addEventListener('click',e=>{ e.stopPropagation(); deleteQuarter(i); });
+    acts.appendChild(cb); acts.appendChild(db);
+    h.appendChild(t); h.appendChild(acts);
+    hdr.appendChild(h);
+  });
+}
+
+function buildLanes(){
+  const area = document.getElementById('lanesArea');
+  area.innerHTML='';
+  lanes.forEach(lane=>{ area.appendChild(makeLaneRow(lane)); });
+}
+
+function makeLaneRow(lane){
+  const row = document.createElement('div');
+  row.className='lane-row'; row.dataset.lid=lane.id;
+
+  const lbl = document.createElement('div');
+  lbl.className='lane-label';
+  const ln = document.createElement('div'); ln.className='lane-name'; ln.contentEditable='true'; ln.spellcheck=false; ln.textContent=lane.name;
+  ln.addEventListener('blur',()=>lane.name=ln.textContent.trim());
+  const ld = document.createElement('div'); ld.className='lane-desc'; ld.contentEditable='true'; ld.spellcheck=false; ld.textContent=lane.desc;
+  ld.addEventListener('blur',()=>lane.desc=ld.textContent.trim());
+
+  const acts = document.createElement('div');
+  acts.className='lane-actions export-hide';
+
+  const addBtn = document.createElement('button');
+  addBtn.className='lane-icon-btn';
+  addBtn.textContent='＋';
+  addBtn.title='Add item to this lane';
+  addBtn.addEventListener('click',()=>{ openAddItemPop(lane); });
+
+  const delBtn = document.createElement('button');
+  delBtn.className='lane-icon-btn danger';
+  delBtn.textContent='🗑';
+  delBtn.title='Remove lane';
+  delBtn.addEventListener('click',()=>{ if(confirm('Remove this lane?')){ lanes=lanes.filter(l=>l.id!==lane.id); buildLanes(); }});
+
+  acts.appendChild(addBtn); acts.appendChild(delBtn);
+  lbl.appendChild(ln); lbl.appendChild(ld); lbl.appendChild(acts);
+  row.appendChild(lbl);
+
+  const canv = document.createElement('div');
+  canv.className='lane-canvas'; canv.dataset.lid=lane.id;
+  canv.style.minHeight = getLaneMinHeight(lane.id)+'px';
+
+  const hl = document.createElement('div'); hl.className='col-hl'; hl.id='hl_'+lane.id;
+  canv.appendChild(hl);
+  redrawColLines(canv);
+  lane.pills.forEach(p=>{ canv.appendChild(makePillEl(p,lane.id)); });
+
+  canv.addEventListener('click', e=>{
+    if(!pendingType||e.target.closest('.pill-item')) return;
+    const cr=canv.getBoundingClientRect(), tw=canv.offsetWidth;
+    const pct=Math.max(0,(e.clientX-cr.left)/tw);
+    const np={id:'p'+(pidCounter++),pct,wpct:.22,type:pendingType,color:'',label:'New item',start:'',end:''};
+    lane.pills.push(np);
+    canv.style.minHeight = getLaneMinHeight(lane.id)+'px';
+    canv.appendChild(makePillEl(np,lane.id));
+    clearPendingType();
+  });
+
+  row.appendChild(canv);
+  return row;
+}
+
+function redrawColLines(canv){
+  canv.querySelectorAll('.col-line-el').forEach(e=>e.remove());
+  const n=quarters.length;
+  for(let i=1;i<n;i++){
+    const line=document.createElement('div');
+    line.className='col-line-el';
+    line.style.cssText=`position:absolute;top:0;bottom:0;width:0.5px;background:var(--border);pointer-events:none;z-index:0;left:${(i/n)*100}%`;
+    canv.appendChild(line);
+  }
+}
+
+function makePillEl(p, lid){
+  const el = document.createElement('div');
+  el.className='pill-item'; el.dataset.pid=p.id; el.dataset.lid=lid;
+  const bg = p.color || TYPE_COLORS[p.type] || '#9ca3af';
+  el.style.background=bg;
+  el.style.left=(p.pct*100)+'%'; el.style.width=(p.wpct*100)+'%';
+  el.style.top=getPillTop(p,lid)+'px';
+
+  const txt=document.createElement('span'); txt.className='pill-text'; txt.contentEditable='true'; txt.spellcheck=false; txt.textContent=p.label;
+  txt.addEventListener('mousedown',e=>e.stopPropagation());
+  txt.addEventListener('blur',()=>p.label=txt.textContent.trim());
+  txt.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();txt.blur();}});
+  el.appendChild(txt);
+
+  const rh=document.createElement('span'); rh.className='pill-rhandle'; rh.title='Drag to resize'; rh.textContent='⟺';
+  rh.addEventListener('mousedown',e=>{ e.stopPropagation(); startResize(e,el,p,lid); });
+  el.appendChild(rh);
+
+  const del=document.createElement('button'); del.className='pill-del'; del.textContent='✕';
+  del.addEventListener('click',e=>{ e.stopPropagation(); removePill(p.id,lid); });
+  el.appendChild(del);
+
+  const dates=document.createElement('div'); dates.className='pill-dates'; dates.dataset.pid=p.id;
+  updateDatesLabel(dates,p);
+  dates.addEventListener('click',e=>{ e.stopPropagation(); openDatePop(e,p,lid); });
+  el.appendChild(dates);
+
+  el.addEventListener('mousedown',e=>startDrag(e,el,p,lid));
+  el.addEventListener('contextmenu',e=>{ e.preventDefault(); openCtx(e,p,lid); });
+  return el;
+}
+
+function updateDatesLabel(el,p){
+  if(p.start||p.end){ el.textContent=(p.start||'?')+' → '+(p.end||'?'); el.style.opacity='1'; }
+  else { el.textContent='+ dates'; el.style.opacity='.4'; }
+}
+
+// ─── OVERLAP-AWARE ROW PACKING ───────────────────────────────────────────────
+// For each pill, find the lowest row where it doesn't overlap any already-placed pill.
+// Two pills overlap horizontally if their ranges [pct, pct+wpct] intersect.
+function packRows(pills){
+  // returns Map: pill.id -> rowIndex
+  const rowMap = new Map();
+  // rowEnds[r] = array of {end: pct+wpct} for pills placed on row r
+  const rowOccupancy = [];
+  const PAD = 0.005; // tiny horizontal padding to avoid pixel-border false overlaps
+
+  pills.forEach(p => {
+    const pStart = p.pct;
+    const pEnd   = p.pct + p.wpct;
+    // find first row with no overlap
+    let placed = false;
+    for(let r = 0; r < rowOccupancy.length; r++){
+      const hasOverlap = rowOccupancy[r].some(occ => pStart < occ.end - PAD && pEnd > occ.start + PAD);
+      if(!hasOverlap){
+        rowOccupancy[r].push({start: pStart, end: pEnd});
+        rowMap.set(p.id, r);
+        placed = true;
+        break;
+      }
+    }
+    if(!placed){
+      rowOccupancy.push([{start: pStart, end: pEnd}]);
+      rowMap.set(p.id, rowOccupancy.length - 1);
+    }
+  });
+  return rowMap;
+}
+
+const ROW_H = PILL_H + PILL_GAP + 16; // total height per row slot (pill + date label gap)
+
+function getPillTop(p, lid){
+  const lane = lanes.find(l => l.id === lid);
+  if(!lane) return PILL_TOP;
+  const rowMap = packRows(lane.pills);
+  const row = rowMap.get(p.id) ?? 0;
+  return PILL_TOP + row * ROW_H;
+}
+
+function getLaneMinHeight(lid){
+  const lane = lanes.find(l => l.id === lid);
+  if(!lane || !lane.pills.length) return 120;
+  const rowMap = packRows(lane.pills);
+  const maxRow = Math.max(...rowMap.values());
+  return PILL_TOP + (maxRow + 1) * ROW_H + 24;
+}
+
+// ─── ADD ITEM POP ─────────────────────────────────────────────────────────────
+let aipLane = null, aipSelectedType = null;
+
+function openAddItemPop(lane){
+  aipLane = lane;
+  aipSelectedType = pendingType || types[0].id;
+  const pop = document.getElementById('addItemPop');
+  // position near the + button in the lane label
+  const laneRow = document.querySelector(`.lane-row[data-lid="${lane.id}"]`);
+  let cx = 170, cy = 200;
+  if(laneRow){
+    const r = laneRow.getBoundingClientRect();
+    cx = Math.min(r.left + 10, window.innerWidth - 280);
+    cy = Math.min(r.top + 10, window.innerHeight - 320);
+  }
+  pop.style.left = cx + 'px';
+  pop.style.top  = cy + 'px';
+
+  // clear + focus name
+  const nameEl = document.getElementById('aipName');
+  nameEl.value = '';
+
+  // build type buttons
+  const typesWrap = document.getElementById('aipTypes');
+  typesWrap.innerHTML = '';
+  types.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'aip-type-btn' + (t.id === aipSelectedType ? ' selected' : '');
+    btn.style.borderColor = t.id === aipSelectedType ? t.color : '';
+    btn.style.color = t.id === aipSelectedType ? t.color : '';
+    btn.innerHTML = `<span class="dot" style="background:${t.color}"></span>${t.label}`;
+    btn.addEventListener('click', () => {
+      aipSelectedType = t.id;
+      typesWrap.querySelectorAll('.aip-type-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.style.borderColor = '';
+        b.style.color = '';
+      });
+      btn.classList.add('selected');
+      btn.style.borderColor = t.color;
+      btn.style.color = t.color;
+    });
+    typesWrap.appendChild(btn);
+  });
+
+  pop.classList.add('open');
+  setTimeout(() => nameEl.focus(), 50);
+}
+
+function confirmAddItem(){
+  if(!aipLane) return;
+  const label = document.getElementById('aipName').value.trim();
+  if(!label){ document.getElementById('aipName').focus(); return; }
+  const type = aipSelectedType || types[0].id;
+  const np = {id:'p'+(pidCounter++), pct:.01, wpct:.22, type, color:'', label, start:'', end:''};
+  aipLane.pills.push(np);
+  buildLanes();
+  closeAddItemPop();
+}
+
+function closeAddItemPop(){
+  document.getElementById('addItemPop').classList.remove('open');
+  aipLane = null;
+}
+
+// ─── DRAG ─────────────────────────────────────────────────────────────────────
+function startDrag(e,el,p,lid){
+  if(e.target.closest('.pill-text')||e.target.closest('.pill-rhandle')||e.target.closest('.pill-del')||e.target.closest('.pill-dates')) return;
+  e.preventDefault();
+  dragPill=p; dragLaneId=lid;
+  el.classList.add('dragging');
+  const r=el.getBoundingClientRect(); dragOX=e.clientX-r.left; dragOY=e.clientY-r.top;
+  ghost=document.createElement('div'); ghost.className='drag-ghost';
+  ghost.style.background=p.color||TYPE_COLORS[p.type]||'#9ca3af';
+  ghost.style.width=el.offsetWidth+'px'; ghost.textContent=p.label;
+  posGhost(e); document.body.appendChild(ghost);
+  document.addEventListener('mousemove',onDrag); document.addEventListener('mouseup',endDrag);
+}
+function posGhost(e){ ghost.style.left=(e.clientX-dragOX)+'px'; ghost.style.top=(e.clientY-dragOY)+'px'; }
+function onDrag(e){
+  if(!ghost) return; posGhost(e);
+  ghost.style.display='none';
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  ghost.style.display='';
+  document.querySelectorAll('.col-hl').forEach(h=>h.classList.remove('show'));
+  const canv=under?under.closest('.lane-canvas'):null;
+  if(canv){
+    const n=quarters.length, cw=canv.offsetWidth/n;
+    const cr=canv.getBoundingClientRect();
+    const col=Math.max(0,Math.min(n-1,Math.floor((e.clientX-cr.left)/cw)));
+    const hl=document.getElementById('hl_'+canv.dataset.lid);
+    if(hl){ hl.style.left=(col/n*100)+'%'; hl.style.width=(1/n*100)+'%'; hl.classList.add('show'); }
+  }
+}
+function endDrag(e){
+  document.removeEventListener('mousemove',onDrag); document.removeEventListener('mouseup',endDrag);
+  if(ghost){ghost.remove();ghost=null;}
+  document.querySelectorAll('.col-hl').forEach(h=>h.classList.remove('show'));
+  if(!dragPill) return;
+  document.querySelectorAll('.pill-item.dragging').forEach(el=>el.style.visibility='hidden');
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  document.querySelectorAll('.pill-item').forEach(el=>{ el.style.visibility=''; el.classList.remove('dragging'); });
+  const targetCanv=under?under.closest('.lane-canvas'):null;
+  if(targetCanv){
+    const newLid=targetCanv.dataset.lid, tw=targetCanv.offsetWidth;
+    const cr=targetCanv.getBoundingClientRect();
+    const newLeft=Math.max(0,e.clientX-cr.left-dragOX);
+    const newPct=Math.min(1-dragPill.wpct, newLeft/tw);
+    if(newLid!==dragLaneId){
+      const old=lanes.find(l=>l.id===dragLaneId), nw=lanes.find(l=>l.id===newLid);
+      if(old&&nw){ old.pills=old.pills.filter(p=>p.id!==dragPill.id); dragPill.pct=newPct; nw.pills.push(dragPill); }
+    } else { dragPill.pct=newPct; }
+    buildLanes();
+  }
+  dragPill=null; dragLaneId=null;
+}
+
+// ─── RESIZE ───────────────────────────────────────────────────────────────────
+function startResize(e,el,p,lid){
+  e.preventDefault(); resizePill=p; resizeLaneId=lid; resizeStartX=e.clientX; resizeStartW=el.offsetWidth;
+  document.addEventListener('mousemove',onResize); document.addEventListener('mouseup',endResize);
+}
+function onResize(e){
+  if(!resizePill) return;
+  const canv=document.querySelector(`.lane-canvas[data-lid="${resizeLaneId}"]`); if(!canv) return;
+  const tw=canv.offsetWidth, dx=e.clientX-resizeStartX;
+  const newW=Math.max(60,resizeStartW+dx);
+  resizePill.wpct=Math.min((tw-resizePill.pct*tw-4)/tw, Math.max(60/tw,newW/tw));
+  const pe=canv.querySelector(`.pill-item[data-pid="${resizePill.id}"]`);
+  if(pe) pe.style.width=(resizePill.wpct*100)+'%';
+}
+function endResize(){ document.removeEventListener('mousemove',onResize); document.removeEventListener('mouseup',endResize); resizePill=null; resizeLaneId=null; }
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function openCtx(e,p,lid){ ctxPill=p; ctxLaneId=lid; const m=document.getElementById('ctxMenu'); m.style.left=e.clientX+'px'; m.style.top=e.clientY+'px'; m.classList.add('open'); }
+function ctxType(type){ if(!ctxPill) return; ctxPill.type=type; ctxPill.color=''; const el=document.querySelector(`.pill-item[data-pid="${ctxPill.id}"]`); if(el) el.style.background=TYPE_COLORS[type]||'#9ca3af'; closeCtx(); }
+function ctxDelete(){ if(!ctxPill) return; removePill(ctxPill.id,ctxLaneId); closeCtx(); }
+function ctxEditDates(){ if(!ctxPill) return; const el=document.querySelector(`.pill-item[data-pid="${ctxPill.id}"]`); if(el){ const r=el.getBoundingClientRect(); openDatePop({clientX:r.left,clientY:r.bottom+4},ctxPill,ctxLaneId); } closeCtx(); }
+function ctxColorPill(){ if(!ctxPill) return; const el=document.querySelector(`.pill-item[data-pid="${ctxPill.id}"]`); if(el){ const r=el.getBoundingClientRect(); openColorPanel('pill',ctxPill,ctxLaneId,{clientX:r.left,clientY:r.bottom+4}); } closeCtx(); }
+function closeCtx(){ document.getElementById('ctxMenu').classList.remove('open'); ctxPill=null; ctxLaneId=null; }
+document.addEventListener('click',e=>{ if(!e.target.closest('#ctxMenu')&&!e.target.closest('#colorPanel')) closeCtx(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeCtx(); closeDatePop(); closeColorPanel(); clearPendingType(); }});
+
+// ─── DATE POPOVER ─────────────────────────────────────────────────────────────
+function openDatePop(e,p,lid){ datePill=p; dateLaneId=lid; const pop=document.getElementById('datePop'); document.getElementById('dpStart').value=p.start||''; document.getElementById('dpEnd').value=p.end||''; pop.style.left=Math.min(e.clientX,window.innerWidth-220)+'px'; pop.style.top=(e.clientY+6)+'px'; pop.classList.add('open'); setTimeout(()=>document.getElementById('dpStart').focus(),50); }
+function saveDates(){ if(!datePill) return; datePill.start=document.getElementById('dpStart').value.trim(); datePill.end=document.getElementById('dpEnd').value.trim(); const de=document.querySelector(`.pill-item[data-pid="${datePill.id}"] .pill-dates`); if(de) updateDatesLabel(de,datePill); closeDatePop(); }
+function closeDatePop(){ document.getElementById('datePop').classList.remove('open'); datePill=null; dateLaneId=null; }
+document.addEventListener('click',e=>{ if(!e.target.closest('#datePop')&&!e.target.closest('.pill-dates')) closeDatePop(); });
+
+// ─── COLOR PANEL ──────────────────────────────────────────────────────────────
+// cpType: 'pill' | 'quarter' | 'legend'
+function openColorPanel(type, target, extra, e){
+  cpType=type; cpTarget=target; cpExtra=extra;
+  const panel=document.getElementById('colorPanel');
+  const titles={pill:'Pill Color',quarter:'Quarter Color',legend:'Theme Colors'};
+  document.getElementById('cpTitle').textContent=titles[type]||'Color';
+  // build swatches
+  const sw=document.getElementById('cpSwatches'); sw.innerHTML='';
+  let currentColor='#4a90d9';
+  if(type==='pill'&&target){ currentColor=target.color||TYPE_COLORS[target.type]||'#9ca3af'; }
+  else if(type==='quarter'&&target!==null){ currentColor=quarters[target].color; }
+  PRESETS.forEach(c=>{
+    const s=document.createElement('div'); s.className='cp-swatch'; s.style.background=c;
+    if(c.toLowerCase()===currentColor.toLowerCase()) s.classList.add('selected');
+    s.addEventListener('click',()=>{ applyColor(c); sw.querySelectorAll('.cp-swatch').forEach(x=>x.classList.remove('selected')); s.classList.add('selected'); });
+    sw.appendChild(s);
+  });
+  document.getElementById('cpCustom').value=currentColor;
+  document.getElementById('cpCustom').addEventListener('input',function(){ applyColor(this.value); });
+  // position
+  const cx=Math.min(e.clientX, window.innerWidth-260);
+  const cy=Math.min(e.clientY+8, window.innerHeight-320);
+  panel.style.left=cx+'px'; panel.style.top=cy+'px';
+  panel.classList.add('open');
+}
+
+function applyColor(color){
+  if(cpType==='pill'&&cpTarget){
+    cpTarget.color=color;
+    const el=document.querySelector(`.pill-item[data-pid="${cpTarget.id}"]`);
+    if(el) el.style.background=color;
+  } else if(cpType==='quarter'&&cpTarget!==null){
+    quarters[cpTarget].color=color;
+    buildHeaders();
+  } else if(cpType==='legend'){
+    // cycle legend theme — tint bg
+    document.getElementById('legendBar').style.background=color+'18';
+    document.getElementById('legendBar').style.borderColor=color+'44';
+  }
+}
+function closeColorPanel(){ document.getElementById('colorPanel').classList.remove('open'); cpTarget=null; cpType=null; }
+
+// ─── QUARTER & LANE MGMT ──────────────────────────────────────────────────────
+function addQuarter(){ const label=prompt('Quarter name:','Q4-2026'); if(!label) return; const color=Q_COLORS[qColorIdx%Q_COLORS.length]; qColorIdx++; quarters.push({id:'q'+(Date.now()),label,color}); build(); }
+function deleteQuarter(qi){ if(quarters.length<=1){alert('Need at least one quarter.');return;} if(!confirm(`Delete "${quarters[qi].label}"?`))return; quarters.splice(qi,1); build(); }
+function addLane(){ const name=prompt('Lane name:','New Lane'); if(!name) return; lanes.push({id:'l'+(lidCounter++),name,desc:'',pills:[]}); buildLanes(); }
+function removePill(pid,lid){ const lane=lanes.find(l=>l.id===lid); if(lane){ lane.pills=lane.pills.filter(p=>p.id!==pid); buildLanes(); } }
+
+// ─── RENDER TYPES (toolbar + legend + ctx menu) ──────────────────────────────
+function renderTypes(){
+  renderToolbarTypes();
+  renderLegend();
+  renderCtxTypes();
+  scheduleSave();
+}
+
+function renderToolbarTypes(){
+  const wrap = document.getElementById('typeButtons');
+  wrap.innerHTML='';
+  types.forEach(t=>{
+    const btn = document.createElement('button');
+    btn.className='tbtn'; btn.dataset.tid=t.id;
+    btn.innerHTML=`<span class="dot" style="background:${t.color}"></span>${t.label}`;
+    btn.addEventListener('click',()=>pickType(t.id,btn));
+    // right-click on type button opens type editor
+    btn.addEventListener('contextmenu',e=>{ e.preventDefault(); openTypePanel(e); });
+    wrap.appendChild(btn);
+  });
+  // gear/edit types button
+  const gear = document.createElement('button');
+  gear.className='tbtn'; gear.title='Edit types'; gear.style.padding='5px 8px'; gear.textContent='⚙️';
+  gear.addEventListener('click',e=>{ e.stopPropagation(); openTypePanel(e); });
+  wrap.appendChild(gear);
+}
+
+function renderLegend(){
+  const bar = document.getElementById('legendBar');
+  bar.innerHTML='';
+  types.forEach(t=>{
+    const item = document.createElement('span');
+    item.className='legend-item';
+    item.innerHTML=`<span class="ldot" style="background:${t.color}"></span>${t.label}`;
+    bar.appendChild(item);
+  });
+  const themeWrap = document.createElement('span');
+  themeWrap.style.marginLeft='auto';
+  themeWrap.innerHTML=`<button class="tbtn export-hide" style="font-size:11px;padding:4px 10px" onclick="openColorPanel('legend',null,null,event)">🎨 Theme</button>`;
+  bar.appendChild(themeWrap);
+}
+
+function renderCtxTypes(){
+  const el = document.getElementById('ctxTypeItems');
+  el.innerHTML='';
+  types.forEach(t=>{
+    const item = document.createElement('div');
+    item.className='ctx-item';
+    item.innerHTML=`<span class="cdot" style="background:${t.color}"></span>${t.label}`;
+    item.addEventListener('click',()=>ctxType(t.id));
+    el.appendChild(item);
+  });
+}
+
+// ─── TYPE PANEL ───────────────────────────────────────────────────────────────
+let tswatchTargetId = null;
+
+function openTypePanel(e){
+  const panel = document.getElementById('typePanel');
+  if(panel.classList.contains('open')){ closeTypePanel(); return; }
+  buildTypeRows();
+  const cx = Math.min(e.clientX, window.innerWidth-300);
+  const cy = Math.min(Math.max(8, e.clientY+8), window.innerHeight-420);
+  panel.style.left=cx+'px'; panel.style.top=cy+'px';
+  panel.classList.add('open');
+}
+function closeTypePanel(){ document.getElementById('typePanel').classList.remove('open'); closeTswatchPop(); }
+
+function buildTypeRows(){
+  const wrap = document.getElementById('typeRows'); wrap.innerHTML='';
+  types.forEach(t=>{
+    const row = document.createElement('div'); row.className='type-row';
+    // color swatch
+    const sw = document.createElement('div'); sw.className='type-color-swatch';
+    sw.style.background=t.color; sw.title='Click to change color';
+    sw.addEventListener('click',e=>{ e.stopPropagation(); openTswatchPop(t.id, e); });
+    // name input
+    const ni = document.createElement('input'); ni.className='type-name-input'; ni.value=t.label; ni.spellcheck=false;
+    ni.addEventListener('change',()=>{ t.label=ni.value.trim(); renderTypes(); });
+    ni.addEventListener('keydown',e=>{ if(e.key==='Enter') ni.blur(); });
+    // delete btn
+    const del = document.createElement('button'); del.className='type-del-btn'; del.textContent='✕'; del.title='Delete type';
+    del.addEventListener('click',()=>{ if(types.length<=1){alert('Need at least one type.');return;} if(!confirm(`Delete type "${t.label}"? Existing pills keep their color.`))return; types=types.filter(x=>x.id!==t.id); buildTypeRows(); renderTypes(); });
+    row.appendChild(sw); row.appendChild(ni); row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+function addType(){
+  const label = prompt('New type name:','Custom Type'); if(!label) return;
+  const color = PRESETS[typeCounter % PRESETS.length]; typeCounter++;
+  types.push({id:'type_'+(typeCounter),label:label.trim(),color});
+  buildTypeRows(); renderTypes();
+}
+
+// ─── INLINE SWATCH PICKER FOR TYPE ───────────────────────────────────────────
+function openTswatchPop(tid, e){
+  tswatchTargetId=tid;
+  const pop=document.getElementById('tswatchPop');
+  const grid=document.getElementById('tswatchGrid'); grid.innerHTML='';
+  const t=types.find(x=>x.id===tid);
+  PRESETS.forEach(c=>{
+    const s=document.createElement('div'); s.className='tswatch-item'; s.style.background=c;
+    if(t && c.toLowerCase()===t.color.toLowerCase()) s.classList.add('sel');
+    s.addEventListener('click',()=>{ applyTypeColor(tid,c); pop.querySelectorAll('.tswatch-item').forEach(x=>x.classList.remove('sel')); s.classList.add('sel'); });
+    grid.appendChild(s);
+  });
+  const custom=document.getElementById('tswatchCustom');
+  custom.value=t?t.color:'#4a90d9';
+  custom.oninput=function(){ applyTypeColor(tid,this.value); };
+  const cx=Math.min(e.clientX,window.innerWidth-210);
+  const cy=Math.min(e.clientY+8,window.innerHeight-220);
+  pop.style.left=cx+'px'; pop.style.top=cy+'px';
+  pop.classList.add('open');
+  e.stopPropagation();
+}
+function closeTswatchPop(){ document.getElementById('tswatchPop').classList.remove('open'); tswatchTargetId=null; }
+
+function applyTypeColor(tid, color){
+  const t=types.find(x=>x.id===tid); if(!t) return;
+  t.color=color;
+  // update swatch in type rows
+  const wrap=document.getElementById('typeRows');
+  const rows=[...wrap.querySelectorAll('.type-row')];
+  const idx=types.findIndex(x=>x.id===tid);
+  if(rows[idx]) rows[idx].querySelector('.type-color-swatch').style.background=color;
+  // update all pills that use this type (and have no custom color override)
+  document.querySelectorAll(`.pill-item`).forEach(el=>{
+    const pid=el.dataset.pid;
+    let pill=null;
+    lanes.forEach(l=>{ const p=l.pills.find(x=>x.id===pid); if(p) pill=p; });
+    if(pill && pill.type===tid && !pill.color){ el.style.background=color; }
+  });
+  // re-render toolbar dots + legend
+  renderTypes();
+}
+
+// ─── ADD PILL via toolbar ─────────────────────────────────────────────────────
+function pickType(type,btn){ if(pendingType===type){clearPendingType();return;} pendingType=type; document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); activeBtn=btn; document.body.style.cursor='crosshair'; }
+function clearPendingType(){ pendingType=null; if(activeBtn) activeBtn.classList.remove('active'); activeBtn=null; document.body.style.cursor=''; }
+
+// close type panel + swatch pop on outside click
+document.addEventListener('mousedown',e=>{
+  const panel=document.getElementById('typePanel');
+  const tpop=document.getElementById('tswatchPop');
+  const aip=document.getElementById('addItemPop');
+  if(panel.classList.contains('open')&&!e.target.closest('#typePanel')&&!e.target.closest('#tswatchPop')&&!e.target.closest('[title="Edit types"]')){
+    closeTypePanel();
+  }
+  if(tpop.classList.contains('open')&&!e.target.closest('#tswatchPop')&&!e.target.closest('.type-color-swatch')){
+    closeTswatchPop();
+  }
+  if(aip.classList.contains('open')&&!e.target.closest('#addItemPop')&&!e.target.closest('.lane-icon-btn')){
+    closeAddItemPop();
+  }
+});
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function showOverlay(msg){ document.getElementById('exportMsg').textContent=msg; document.getElementById('exportOverlay').classList.add('show'); }
+function hideOverlay(){ document.getElementById('exportOverlay').classList.remove('show'); }
+
+async function captureCanvas(){
+  document.body.classList.add('exporting');
+  await new Promise(r=>setTimeout(r,80)); // let CSS apply
+  const el=document.getElementById('pageContent');
+  const canvas=await html2canvas(el,{
+    scale:2, useCORS:true, allowTaint:true, backgroundColor:'#f7f8fa',
+    ignoreElements: e=>['export-overlay','ctx-menu','date-pop','color-panel'].some(c=>e.classList.contains(c))
+  });
+  document.body.classList.remove('exporting');
+  return canvas;
+}
+
+async function exportPNG(){
+  showOverlay('Rendering page…');
+  try{ const c=await captureCanvas(); const a=document.createElement('a'); a.download='sootchy-roadmap.png'; a.href=c.toDataURL('image/png'); a.click(); }
+  catch(err){ alert('Export failed: '+err.message); }
+  hideOverlay();
+}
+async function exportPDF(){
+  showOverlay('Generating PDF…');
+  try{
+    const c=await captureCanvas(); const img=c.toDataURL('image/png');
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'px',format:[c.width/2,c.height/2]});
+    pdf.addImage(img,'PNG',0,0,c.width/2,c.height/2); pdf.save('sootchy-roadmap.pdf');
+  } catch(err){ alert('Export failed: '+err.message); }
+  hideOverlay();
+}
+// ─── SERIALIZE / DESERIALIZE ─────────────────────────────────────────────────
+function getState(){
+  return {
+    _v: 1,
+    meta:{
+      title: document.getElementById('roadmapTitle').textContent.trim(),
+      subtitle: document.getElementById('roadmapSubtitle').textContent.trim(),
+      version: document.getElementById('metaVersion').value,
+      publishedBy: document.getElementById('metaPublished').value,
+      leadershipApproved: document.getElementById('metaApproved').value,
+    },
+    types, quarters, lanes
+  };
+}
+
+function applyState(data){
+  if(!data||data._v!==1) return false;
+  // meta
+  if(data.meta){
+    if(data.meta.title)     document.getElementById('roadmapTitle').textContent    = data.meta.title;
+    if(data.meta.subtitle)  document.getElementById('roadmapSubtitle').textContent = data.meta.subtitle;
+    if(data.meta.version)   document.getElementById('metaVersion').value           = data.meta.version;
+    if(data.meta.publishedBy) document.getElementById('metaPublished').value       = data.meta.publishedBy;
+    if(data.meta.leadershipApproved) document.getElementById('metaApproved').value = data.meta.leadershipApproved;
+  }
+  if(Array.isArray(data.types)    && data.types.length)    types    = data.types;
+  if(Array.isArray(data.quarters) && data.quarters.length) quarters = data.quarters;
+  if(Array.isArray(data.lanes))                            lanes    = data.lanes;
+  renderTypes();
+  build();
+  return true;
+}
+
+// ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
+const LS_KEY = 'sootchy_roadmap_v1';
+let autoSaveTimer = null;
+
+function scheduleSave(){
+  if(typeof LS_KEY === 'undefined') return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(getState()));
+      const el = document.getElementById('autoSaveLabel');
+      if(!el) return;
+      const now = new Date();
+      el.textContent = 'Saved ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      el.style.color = '#2bbfa4';
+      setTimeout(()=>{ el.style.color='var(--muted)'; }, 2000);
+    } catch(e){ console.warn('Auto-save failed', e); }
+  }, 1200);
+}
+
+// ─── JSON EXPORT ──────────────────────────────────────────────────────────────
+function exportJSON(){
+  const data = getState();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (document.getElementById('roadmapTitle').textContent.trim().replace(/\s+/g,'-').toLowerCase() || 'sootchy-roadmap') + '.json';
+  a.click();
+}
+
+// ─── JSON UPLOAD / LOAD ───────────────────────────────────────────────────────
+function triggerUpload(){
+  document.getElementById('jsonUploadInput').value = '';
+  document.getElementById('jsonUploadInput').click();
+}
+
+function loadFromFile(event){
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!applyState(data)){
+        // try legacy format (no _v)
+        const legacy = {_v:1, meta:{}, types:[], quarters:[], lanes:[]};
+        if(data.meta)     legacy.meta     = data.meta;
+        if(data.types)    legacy.types    = data.types;
+        if(data.quarters) legacy.quarters = data.quarters;
+        if(data.lanes)    legacy.lanes    = data.lanes;
+        applyState(legacy);
+      }
+      showLoadToast('✓ Roadmap loaded');
+    } catch(err){
+      alert('Could not read file. Make sure it is a valid Sootchy roadmap JSON.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showLoadToast(msg){
+  let toast = document.getElementById('loadToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'loadToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1d23;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:500;z-index:30000;opacity:0;transition:opacity .3s';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  setTimeout(()=>{ toast.style.opacity='0'; }, 2500);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('aipName').addEventListener('keydown', e => {
+  if(e.key === 'Enter') confirmAddItem();
+  if(e.key === 'Escape') closeAddItemPop();
+});
+
+// Try to restore from localStorage first
+(function(){
+  try{
+    const saved = localStorage.getItem(LS_KEY);
+    if(saved){
+      const data = JSON.parse(saved);
+      if(applyState(data)){
+        const el = document.getElementById('autoSaveLabel');
+        el.textContent = 'Restored from last session';
+        setTimeout(()=>{ el.textContent=''; }, 3000);
+        return;
+      }
+    }
+  } catch(e){ console.warn('Could not restore from localStorage', e); }
+  // No saved state — render defaults
+  renderTypes();
+  build();
+})();
+</script>
+</body>
+</html>
