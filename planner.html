@@ -1268,7 +1268,7 @@ document.addEventListener('mousedown',e=>{
   if(tpop.classList.contains('open')&&!e.target.closest('#tswatchPop')&&!e.target.closest('.type-color-swatch')){
     closeTswatchPop();
   }
-  if(aip.classList.contains('open')&&!e.target.closest('#addItemPop')&&!e.target.closest('.lane-icon-btn')){
+  if(aip.classList.contains('open')&&!e.target.closest('#addItemPop')&&!e.target.closest('.lane-icon-btn')&&!e.target.closest('.aip-btn')){
     closeAddItemPop();
   }
 });
@@ -1317,6 +1317,7 @@ function getState(){
       leadershipApproved: document.getElementById('metaApproved').value,
     },
     todayPct,
+    _mapId: _currentMapId || null,
     types, quarters, lanes
   };
 }
@@ -1360,7 +1361,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1507,24 +1508,21 @@ function openMapFromFirebase(mapId){
 
   let _firstLoad = true;
   _mapListener = ref.on('value', snap=>{
-    if(_ownWriteCount > 0){ _ownWriteCount--; return; }
+    if(Date.now() < _ignoreRemoteUntil) return; // our own write — skip
     const data = snap.val();
     if(data){
       if(_firstLoad){
-        // on first load: pause markUnsaved so we don't immediately overwrite with current canvas
         _firstLoad = false;
-        const _savedInitDone = _initDone;
-        _initDone = false;
+        const _s = _initDone; _initDone=false;
         applyState(data);
-        _initDone = _savedInitDone;
+        _initDone=_s;
         _hasUnsavedChanges = false;
         hideUnsavedBar();
       } else {
-        // subsequent updates from other editors — apply without touching unsaved flag
-        const _savedInitDone = _initDone;
-        _initDone = false;
+        // update from another editor
+        const _s = _initDone; _initDone=false;
         applyState(data);
-        _initDone = _savedInitDone;
+        _initDone=_s;
       }
     }
   });
@@ -1559,11 +1557,13 @@ function saveToFirebase(mapId, meta){
 }
 
 // ─── SYNC DEBOUNCE (auto-push changes while map is open) ─────────────────
+let _ignoreRemoteUntil = 0; // timestamp — ignore remote updates before this
+
 function scheduleSync(){
   if(!_currentMapId || !_currentUser) return;
   clearTimeout(_syncDebounceTimer);
   _syncDebounceTimer = setTimeout(()=>{
-    _ownWriteCount++;
+    _ignoreRemoteUntil = Date.now() + 3000; // ignore remote for 3s after our write
     _db.ref('quickmaps/'+_currentMapId+'/state').set(getState()).then(()=>{
       _db.ref('quickmaps/'+_currentMapId+'/meta/updatedAt').set(Date.now());
       showAutoSaveLabel('Synced');
@@ -1896,6 +1896,32 @@ document.getElementById('aipName').addEventListener('keydown', e => {
       if(applyState(data)){
         showAutoSaveLabel('Restored');
         _initDone = true;
+        // re-attach Firebase listener if user had a map open
+        if(data._mapId){
+          _currentMapId = data._mapId;
+          // wait for auth then re-attach
+          _auth.onAuthStateChanged(function reattach(user){
+            if(user){
+              _auth.removeAuthTokenListener && _auth.removeAuthTokenListener(reattach);
+              const ref = _db.ref('quickmaps/'+data._mapId+'/state');
+              _mapListenerRef = ref;
+              let firstSkip = true;
+              _mapListener = ref.on('value', snap=>{
+                if(firstSkip){ firstSkip=false; return; } // skip first echo of what we just restored
+                if(_ownWriteCount > 0){ _ownWriteCount--; return; }
+                const d = snap.val();
+                if(d){
+                  const _s = _initDone; _initDone=false;
+                  applyState(d);
+                  _initDone=_s;
+                }
+              });
+              joinPresence(data._mapId);
+              // update collab bar once maps load
+              setTimeout(()=>{ if(_mapsAllData[data._mapId]) updateCollabBar(data._mapId); }, 2000);
+            }
+          });
+        }
         return;
       }
     }
