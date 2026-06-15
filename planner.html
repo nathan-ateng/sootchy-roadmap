@@ -1368,7 +1368,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '2.4';
+const APP_VERSION = '2.5';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1838,7 +1838,8 @@ function confirmSaveMap(){
 // ─── NEW MAP ─────────────────────────────────────────────────────────────
 function newMapClick(){
   checkUnsavedThen(()=>{
-    if(_mapListener){ _mapListener(); _mapListener=null; }
+    _detachMapListener();        // properly detach via ref.off()
+    _ignoreRemoteUntil = 9e15;  // block ALL Firebase echoes during reset
     _currentMapId = null;
     todayPct = null;
     pidCounter = 100; lidCounter = 10;
@@ -1867,6 +1868,7 @@ function newMapClick(){
     // clear localStorage so this fresh state persists on refresh
     try{ localStorage.removeItem(LS_KEY); } catch(e){}
     renderTypes(); build();
+    _ignoreRemoteUntil = 0;  // re-enable Firebase for the new blank map
     setCollabBarNoMap();
     closeMapsPanel();
     _hasUnsavedChanges = false;
