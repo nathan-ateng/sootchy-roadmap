@@ -620,6 +620,7 @@ function buildHeaders(){
 }
 
 function buildLanes(){
+  if(_initDone && _currentMapId) _ignoreRemoteUntil = Date.now() + 3000;
   const area = document.getElementById('lanesArea');
   area.innerHTML='';
   lanes.forEach(lane=>{ area.appendChild(makeLaneRow(lane)); });
@@ -1570,6 +1571,7 @@ function _reconnectMap(mapId){
 // ─── OPEN MAP FROM FIREBASE ───────────────────────────────────────────────
 function openMapFromFirebase(mapId){
   _currentMapId = mapId;
+  _ignoreRemoteUntil = 0; // allow Firebase to load this map
   _attachMapListener(mapId, false); // skipFirstLoad=false — load state from Firebase
   joinPresence(mapId);
   updateCollabBar(mapId);
