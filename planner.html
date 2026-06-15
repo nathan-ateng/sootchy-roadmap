@@ -1360,7 +1360,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1495,17 +1495,38 @@ function loadAllMaps(){
 }
 
 // ─── OPEN MAP FROM FIREBASE ───────────────────────────────────────────────
+let _mapListenerRef = null; // track the ref so we can call .off()
+
 function openMapFromFirebase(mapId){
-  // detach old listener
-  if(_mapListener){ _mapListener(); _mapListener=null; }
+  // detach old listener using compat SDK ref.off()
+  if(_mapListenerRef){ _mapListenerRef.off('value', _mapListener); _mapListenerRef=null; _mapListener=null; }
 
   _currentMapId = mapId;
   const ref = _db.ref('quickmaps/'+mapId+'/state');
+  _mapListenerRef = ref;
 
+  let _firstLoad = true;
   _mapListener = ref.on('value', snap=>{
     if(_ownWriteCount > 0){ _ownWriteCount--; return; }
     const data = snap.val();
-    if(data){ applyState(data); }
+    if(data){
+      if(_firstLoad){
+        // on first load: pause markUnsaved so we don't immediately overwrite with current canvas
+        _firstLoad = false;
+        const _savedInitDone = _initDone;
+        _initDone = false;
+        applyState(data);
+        _initDone = _savedInitDone;
+        _hasUnsavedChanges = false;
+        hideUnsavedBar();
+      } else {
+        // subsequent updates from other editors — apply without touching unsaved flag
+        const _savedInitDone = _initDone;
+        _initDone = false;
+        applyState(data);
+        _initDone = _savedInitDone;
+      }
+    }
   });
 
   // join presence
