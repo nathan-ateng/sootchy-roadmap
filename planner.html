@@ -586,7 +586,7 @@ let datePill=null, dateLaneId=null;
 let cpTarget=null, cpType=null, cpExtra=null;
 
 // ─── BUILD ────────────────────────────────────────────────────────────────────
-function build(){ buildHeaders(); buildLanes(); scheduleSave(); setTimeout(renderTodayLine, 0); }
+function build(){ buildHeaders(); buildLanes(); scheduleSave(); setTimeout(renderTodayLine, 0); if(_initDone && _currentMapId){ try{ markUnsaved(); }catch(e){} } }
 
 function buildHeaders(){
   const hdr = document.getElementById('quartersHeader');
@@ -1121,6 +1121,7 @@ function renderTypes(){
   renderLegend();
   renderCtxTypes();
   scheduleSave();
+  if(_initDone && _currentMapId){ try{ markUnsaved(); }catch(e){} }
 }
 
 function renderToolbarTypes(){
@@ -1359,7 +1360,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1856,14 +1857,8 @@ function showAutoSaveLabel(msg){
   setTimeout(()=>{ el.style.color='var(--muted)'; }, 2500);
 }
 
-// ─── HOOK markUnsaved INTO build/renderTypes ──────────────────────────────
-// After init is done, patch scheduleSave to also trigger sync
+// ─── INIT DONE FLAG ──────────────────────────────────────────────────────
 let _initDone = false;
-const _origScheduleSave = scheduleSave;
-function scheduleSave(){
-  _origScheduleSave();
-  if(_initDone && _currentMapId) markUnsaved();
-}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('aipName').addEventListener('keydown', e => {
