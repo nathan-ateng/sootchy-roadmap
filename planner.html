@@ -1164,14 +1164,19 @@ function applyState(data){
   if(Array.isArray(data.quarters) && data.quarters.length) quarters = data.quarters;
   if(Array.isArray(data.lanes))                            lanes    = data.lanes;
   if(typeof data.todayPct === 'number') todayPct = data.todayPct;
-  // Reset counters above any existing IDs to prevent collisions after load
+  // Deduplicate IDs and reset counters to prevent future collisions
   if(Array.isArray(data.lanes)){
+    const seenLids = new Set(), seenPids = new Set();
     data.lanes.forEach(lane=>{
-      const lnum = parseInt((lane.id||'').replace(/[^0-9]/g,''));
-      if(!isNaN(lnum) && lnum >= lidCounter) lidCounter = lnum + 1;
+      if(seenLids.has(lane.id)) lane.id = 'l' + (lidCounter++);
+      seenLids.add(lane.id);
+      const ln = parseInt((lane.id||'').replace(/[^0-9]/g,''));
+      if(!isNaN(ln) && ln >= lidCounter) lidCounter = ln + 1;
       (lane.pills||[]).forEach(p=>{
-        const pnum = parseInt((p.id||'').replace(/[^0-9]/g,''));
-        if(!isNaN(pnum) && pnum >= pidCounter) pidCounter = pnum + 1;
+        if(seenPids.has(p.id)) p.id = 'p' + (pidCounter++);
+        seenPids.add(p.id);
+        const pn = parseInt((p.id||'').replace(/[^0-9]/g,''));
+        if(!isNaN(pn) && pn >= pidCounter) pidCounter = pn + 1;
       });
     });
   }
