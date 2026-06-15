@@ -505,15 +505,15 @@ body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;co
 </div>
 
 <!-- ── ADD ITEM POPOVER ── -->
-<div class="add-item-pop" id="addItemPop">
+<div class="add-item-pop" id="addItemPop" onmousedown="event.stopPropagation()">
   <h3>Add item</h3>
   <label class="aip-label">Name</label>
   <input class="aip-input" id="aipName" placeholder="Item name" spellcheck="false">
   <label class="aip-label">Type</label>
   <div class="aip-types" id="aipTypes"></div>
   <div class="aip-actions">
-    <button class="aip-btn" onclick="closeAddItemPop()">Cancel</button>
-    <button class="aip-btn primary" onclick="confirmAddItem()">Add</button>
+    <button class="aip-btn" onmousedown="event.stopPropagation()" onclick="closeAddItemPop()">Cancel</button>
+    <button class="aip-btn primary" onmousedown="event.stopPropagation()" onclick="confirmAddItem()">Add</button>
   </div>
 </div>
 
@@ -591,7 +591,7 @@ let datePill=null, dateLaneId=null;
 let cpTarget=null, cpType=null, cpExtra=null;
 
 // ─── BUILD ────────────────────────────────────────────────────────────────────
-function build(){ buildHeaders(); buildLanes(); scheduleSave(); setTimeout(renderTodayLine, 0); if(_initDone && _currentMapId){ try{ markUnsaved(); }catch(e){} } }
+function build(){ buildHeaders(); buildLanes(); if(_initDone && _currentMapId) _ignoreRemoteUntil=Date.now()+3000; scheduleSave(); setTimeout(renderTodayLine, 0); if(_initDone && _currentMapId){ try{ markUnsaved(); }catch(e){} } }
 
 function buildHeaders(){
   const hdr = document.getElementById('quartersHeader');
@@ -1273,7 +1273,7 @@ document.addEventListener('mousedown',e=>{
   if(tpop.classList.contains('open')&&!e.target.closest('#tswatchPop')&&!e.target.closest('.type-color-swatch')){
     closeTswatchPop();
   }
-  if(aip.classList.contains('open')&&!e.target.closest('#addItemPop')&&!e.target.closest('.lane-icon-btn')&&!e.target.closest('.aip-btn')){
+  if(aip.classList.contains('open')&&!e.target.closest('#addItemPop')&&!e.target.closest('.lane-icon-btn')){
     closeAddItemPop();
   }
 });
@@ -1366,7 +1366,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1937,8 +1937,14 @@ document.getElementById('aipName').addEventListener('keydown', e => {
       const data = JSON.parse(saved);
       if(applyState(data)){
         showAutoSaveLabel('Restored');
-        // if map was open, store mapId so onAuthStateChanged reconnects it
-        if(data._mapId) _currentMapId = data._mapId;
+        if(data._mapId){
+          _currentMapId = data._mapId;
+          // Immediately show Update button — we know this map is saved
+          const btn = document.getElementById('saveToTeamBtn');
+          if(btn) btn.textContent = '☁ Update';
+          const sub = document.getElementById('collabMapSub');
+          if(sub) sub.textContent = 'Reconnecting…';
+        }
         _initDone = true;
         return;
       }
