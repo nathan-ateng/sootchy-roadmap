@@ -107,9 +107,12 @@ html,body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);colo
 .col-hl{position:absolute;top:0;bottom:0;background:rgba(74,144,217,.06);pointer-events:none;display:none;z-index:0}
 .col-hl.show{display:block}
 
-/* today line */
-.today-line{position:absolute;top:0;bottom:0;width:2px;background:#e53e3e;pointer-events:none;z-index:50;transform:translateX(-50%)}
-.today-label{position:absolute;top:4px;background:#e53e3e;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;pointer-events:none;z-index:51;transform:translateX(-50%);white-space:nowrap;letter-spacing:.03em}
+/* today line — fixed overlay, never clipped by canvas-outer */
+.today-overlay{position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:200}
+.today-line-fixed{position:fixed;width:2px;background:#e53e3e;pointer-events:none;transform:translateX(-50%)}
+.today-drag-handle{position:fixed;width:20px;background:transparent;cursor:ew-resize;pointer-events:auto;transform:translateX(-50%);display:flex;align-items:flex-start;justify-content:center}
+.today-drag-handle::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:#e53e3e;transform:translateX(-50%)}
+.today-label{position:fixed;background:#e53e3e;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;letter-spacing:.03em;cursor:ew-resize;user-select:none;pointer-events:auto;transform:translateX(-50%)}
 
 /* ghost */
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;border-radius:999px;height:28px;display:flex;align-items:center;padding:0 20px 0 9px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap;box-shadow:var(--sh-drag);transform:rotate(1.5deg) scale(1.04)}
@@ -268,6 +271,7 @@ body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;co
     <button class="tbtn-dark secondary" onclick="exportJSON()" title="Download JSON to save your work">⬇ JSON</button>
     <button class="tbtn-dark secondary" onclick="triggerUpload()" title="Upload a saved JSON file to restore your roadmap">⬆ Load JSON</button>
     <input type="file" id="jsonUploadInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
+    <button id="todayToggleBtn" class="tbtn-dark secondary" onclick="toggleTodayLine()" title="Show/hide Today line" style="white-space:nowrap">📍 Today</button>
     <div id="autoSaveLabel" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:4px"></div>
     <a href="/quickmap-guide.html" target="_blank" title="How to use Quick Map" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;text-decoration:none;transition:all .13s;flex-shrink:0" onmouseover="this.style.borderColor='#4a90d9';this.style.color='#4a90d9'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">?</a>
   </div>
@@ -277,9 +281,7 @@ body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;co
 <div class="canvas-outer" id="canvasOuter">
   <div class="canvas-header-row">
     <div class="lane-header-stub">Swim Lane</div>
-    <div class="quarters-header" id="quartersHeader" style="position:relative">
-      <div id="todayLineHeader" style="position:absolute;top:0;bottom:0;width:2px;background:#e53e3e;pointer-events:none;z-index:50;display:none;transform:translateX(-50%)"></div>
-    </div>
+    <div class="quarters-header" id="quartersHeader"></div>
     <button class="add-q-btn export-hide" onclick="addQuarter()" title="Add quarter">+</button>
   </div>
   <div class="lanes-area" id="lanesArea"></div>
@@ -414,7 +416,7 @@ let datePill=null, dateLaneId=null;
 let cpTarget=null, cpType=null, cpExtra=null;
 
 // ─── BUILD ────────────────────────────────────────────────────────────────────
-function build(){ buildHeaders(); buildLanes(); updateTodayLineHeader(); scheduleSave(); }
+function build(){ buildHeaders(); buildLanes(); scheduleSave(); setTimeout(renderTodayLine, 0); }
 
 function buildHeaders(){
   const hdr = document.getElementById('quartersHeader');
@@ -485,7 +487,6 @@ function makeLaneRow(lane){
   const hl = document.createElement('div'); hl.className='col-hl'; hl.id='hl_'+lane.id;
   canv.appendChild(hl);
   redrawColLines(canv);
-  drawTodayLine(canv);
   lane.pills.forEach(p=>{ canv.appendChild(makePillEl(p,lane.id)); });
 
   canv.addEventListener('click', e=>{
@@ -514,48 +515,138 @@ function redrawColLines(canv){
   }
 }
 
-// ─── TODAY LINE ─────────────────────────────────────────────────────────────
-function parseDateFromQuarterLabel(label){
-  const m = label.match(/Q(\d)-(\d{4})/i);
-  if(m){ const q=parseInt(m[1]),y=parseInt(m[2]),month=(q-1)*3; return new Date(y,month,1); }
-  const d=new Date(label); return isNaN(d)?null:d;
+// ─── TODAY LINE — fixed overlay, immune to overflow:hidden ─────────────────
+// todayPct: null=hidden, 0..1=position as fraction of the grid canvas width
+let todayPct = null;
+let todayDragging = false;
+let todayDragStartX = 0, todayDragStartPct = 0;
+
+// Create overlay elements once
+const _todayHandle = document.createElement('div');
+_todayHandle.className = 'today-drag-handle export-hide';
+_todayHandle.style.display = 'none';
+document.body.appendChild(_todayHandle);
+
+const _todayLabel = document.createElement('div');
+_todayLabel.className = 'today-label export-hide';
+_todayLabel.textContent = 'Today';
+_todayLabel.style.display = 'none';
+document.body.appendChild(_todayLabel);
+
+// Line segments: one per lane row — stored as array of divs
+const _todayLines = [];
+
+function _todayGetGrid(){
+  // Returns the bounding rect of the lanes area (excluding the lane-label column)
+  const outer = document.getElementById('canvasOuter');
+  const stub  = outer ? outer.querySelector('.lane-header-stub') : null;
+  if(!outer || !stub) return null;
+  const or = outer.getBoundingClientRect();
+  const sr = stub.getBoundingClientRect();
+  return { left: sr.right, right: or.right, top: or.top, bottom: or.bottom, width: or.right - sr.right };
 }
-function getTodayPct(){
-  if(!quarters.length) return null;
-  const today=new Date(); today.setHours(0,0,0,0);
-  const starts=quarters.map(q=>parseDateFromQuarterLabel(q.label));
-  if(starts.some(d=>d===null)) return null;
-  const ends=starts.map((s,i)=>{
-    if(i<starts.length-1) return starts[i+1];
-    const e=new Date(s); e.setMonth(e.getMonth()+3); return e;
-  });
-  const totalStart=starts[0], totalEnd=ends[ends.length-1];
-  const totalMs=totalEnd-totalStart;
-  if(today<totalStart||today>totalEnd) return null;
-  return (today-totalStart)/totalMs;
+
+function _todayGetHeaderRect(){
+  const hdrRow = document.querySelector('.canvas-header-row');
+  if(!hdrRow) return null;
+  return hdrRow.getBoundingClientRect();
 }
-function drawTodayLine(canv){
-  canv.querySelectorAll('.today-line').forEach(e=>e.remove());
-  const pct=getTodayPct(); if(pct===null) return;
-  const line=document.createElement('div');
-  line.className='today-line export-hide';
-  line.style.left=(pct*100)+'%';
-  canv.appendChild(line);
-}
-function updateTodayLineHeader(){
-  const el=document.getElementById('todayLineHeader'); if(!el) return;
-  const pct=getTodayPct();
-  if(pct===null){ el.style.display='none';
-    const old=document.getElementById('todayLineLabel'); if(old) old.remove(); return; }
-  el.style.display='block'; el.style.left=(pct*100)+'%';
-  let lbl=document.getElementById('todayLineLabel');
-  if(!lbl){
-    lbl=document.createElement('div'); lbl.id='todayLineLabel';
-    lbl.className='today-label export-hide'; lbl.textContent='Today';
-    el.parentElement.appendChild(lbl);
+
+function renderTodayLine(){
+  if(todayPct === null){
+    _todayHandle.style.display = 'none';
+    _todayLabel.style.display  = 'none';
+    _todayLines.forEach(l => l.remove());
+    _todayLines.length = 0;
+    return;
   }
-  lbl.style.left=(pct*100)+'%';
+
+  const grid = _todayGetGrid();
+  const hdrRect = _todayGetHeaderRect();
+  if(!grid || !hdrRect) return;
+
+  const x = grid.left + todayPct * grid.width;
+
+  // header drag handle (spans header row height)
+  _todayHandle.style.display = 'block';
+  _todayHandle.style.left    = x + 'px';
+  _todayHandle.style.top     = hdrRect.top + 'px';
+  _todayHandle.style.height  = hdrRect.height + 'px';
+
+  // label sits inside header
+  _todayLabel.style.display = 'block';
+  _todayLabel.style.left    = x + 'px';
+  _todayLabel.style.top     = (hdrRect.top + 4) + 'px';
+
+  // one line per lane row
+  const laneRows = [...document.querySelectorAll('.lane-row')];
+  // remove stale lines
+  while(_todayLines.length > laneRows.length){
+    _todayLines.pop().remove();
+  }
+  laneRows.forEach((row, i) => {
+    const r = row.getBoundingClientRect();
+    if(!_todayLines[i]){
+      const el = document.createElement('div');
+      el.className = 'today-line-fixed export-hide';
+      document.body.appendChild(el);
+      _todayLines[i] = el;
+    }
+    const el = _todayLines[i];
+    el.style.left   = x + 'px';
+    el.style.top    = r.top + 'px';
+    el.style.height = r.height + 'px';
+  });
 }
+
+function toggleTodayLine(){
+  todayPct = (todayPct !== null) ? null : 0.5;
+  renderTodayLine();
+  updateTodayToggleBtn();
+  scheduleSave();
+}
+
+function updateTodayToggleBtn(){
+  const btn = document.getElementById('todayToggleBtn');
+  if(!btn) return;
+  btn.style.borderColor = todayPct !== null ? '#e53e3e' : '';
+  btn.style.color       = todayPct !== null ? '#e53e3e' : '';
+}
+
+// Called from build() after lanes rebuild — just re-render positions
+function drawTodayLine(){ renderTodayLine(); }
+function updateTodayLineHeader(){ renderTodayLine(); }
+
+// Drag
+_todayHandle.addEventListener('mousedown', startTodayDrag);
+_todayLabel.addEventListener('mousedown', startTodayDrag);
+
+function startTodayDrag(e){
+  if(todayPct === null) return;
+  e.preventDefault(); e.stopPropagation();
+  todayDragging = true;
+  todayDragStartX = e.clientX;
+  todayDragStartPct = todayPct;
+  document.addEventListener('mousemove', onTodayDrag);
+  document.addEventListener('mouseup',   endTodayDrag);
+}
+function onTodayDrag(e){
+  if(!todayDragging) return;
+  const grid = _todayGetGrid(); if(!grid) return;
+  const dx = e.clientX - todayDragStartX;
+  todayPct = Math.max(0, Math.min(1, todayDragStartPct + dx / grid.width));
+  renderTodayLine();
+}
+function endTodayDrag(){
+  todayDragging = false;
+  document.removeEventListener('mousemove', onTodayDrag);
+  document.removeEventListener('mouseup',   endTodayDrag);
+  scheduleSave();
+}
+
+// Re-render on scroll/resize so fixed positions stay in sync
+window.addEventListener('scroll', ()=>{ if(todayPct!==null) renderTodayLine(); }, {passive:true});
+window.addEventListener('resize', ()=>{ if(todayPct!==null) renderTodayLine(); });
 
 function makePillEl(p, lid){
   const el = document.createElement('div');
@@ -1044,6 +1135,7 @@ function getState(){
       publishedBy: document.getElementById('metaPublished').value,
       leadershipApproved: document.getElementById('metaApproved').value,
     },
+    todayPct,
     types, quarters, lanes
   };
 }
@@ -1061,8 +1153,10 @@ function applyState(data){
   if(Array.isArray(data.types)    && data.types.length)    types    = data.types;
   if(Array.isArray(data.quarters) && data.quarters.length) quarters = data.quarters;
   if(Array.isArray(data.lanes))                            lanes    = data.lanes;
+  if(typeof data.todayPct === 'number') todayPct = data.todayPct;
   renderTypes();
   build();
+  updateTodayToggleBtn();
   return true;
 }
 
