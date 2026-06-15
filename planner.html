@@ -1334,16 +1334,32 @@ function applyState(data){
   if(Array.isArray(data.quarters) && data.quarters.length) quarters = data.quarters;
   if(Array.isArray(data.lanes))                            lanes    = data.lanes;
   if(typeof data.todayPct === 'number') todayPct = data.todayPct;
+  // Deduplicate IDs and reset counters to prevent collisions
+  if(Array.isArray(data.lanes)){
+    const seenLids = new Set(), seenPids = new Set();
+    data.lanes.forEach(lane=>{
+      if(seenLids.has(lane.id)) lane.id = 'l' + (lidCounter++);
+      seenLids.add(lane.id);
+      const ln = parseInt((lane.id||'').replace(/[^0-9]/g,''));
+      if(!isNaN(ln) && ln >= lidCounter) lidCounter = ln + 1;
+      (lane.pills||[]).forEach(p=>{
+        if(seenPids.has(p.id)) p.id = 'p' + (pidCounter++);
+        seenPids.add(p.id);
+        const pn = parseInt((p.id||'').replace(/[^0-9]/g,''));
+        if(!isNaN(pn) && pn >= pidCounter) pidCounter = pn + 1;
+      });
+    });
+  }
   renderTypes();
   build();
-  updateTodayToggleBtn();
+  if(typeof updateTodayToggleBtn === 'function') updateTodayToggleBtn();
   return true;
 }
 
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.6';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1383,20 +1399,23 @@ function loadFromFile(event){
   const file = event.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){ alert('Invalid JSON file — could not parse.'); return; }
     try{
-      const data = JSON.parse(e.target.result);
+      // normalise: if _v missing, inject it
+      if(data && !data._v && (data.lanes||data.quarters)){
+        data._v = 1;
+        if(!data.meta) data.meta = {};
+      }
       if(!applyState(data)){
-        // try legacy format (no _v)
-        const legacy = {_v:1, meta:{}, types:[], quarters:[], lanes:[]};
-        if(data.meta)     legacy.meta     = data.meta;
-        if(data.types)    legacy.types    = data.types;
-        if(data.quarters) legacy.quarters = data.quarters;
-        if(data.lanes)    legacy.lanes    = data.lanes;
-        applyState(legacy);
+        alert('Could not load roadmap. The file may be from an incompatible version.');
+        return;
       }
       showLoadToast('✓ Roadmap loaded');
     } catch(err){
-      alert('Could not read file. Make sure it is a valid Sootchy roadmap JSON.');
+      console.error('loadFromFile error:', err);
+      alert('Could not load roadmap: ' + err.message);
     }
   };
   reader.readAsText(file);
@@ -1753,12 +1772,32 @@ function newMapClick(){
   checkUnsavedThen(()=>{
     if(_mapListener){ _mapListener(); _mapListener=null; }
     _currentMapId = null;
-    // reset to clean defaults
-    quarters = [{id:'q0',label:'Q1',color:'#2bbfa4'},{id:'q1',label:'Q2',color:'#f5a623'},{id:'q2',label:'Q3',color:'#555e6b'},{id:'q3',label:'Q4',color:'#4a90d9'}];
+    todayPct = null;
+    pidCounter = 100; lidCounter = 10;
+    // use current year for quarter labels
+    const yr = new Date().getFullYear();
+    quarters = [
+      {id:'q0',label:'Q1-'+yr,    color:'#2bbfa4'},
+      {id:'q1',label:'Q2-'+yr,    color:'#f5a623'},
+      {id:'q2',label:'Q3-'+yr,    color:'#555e6b'},
+      {id:'q3',label:'Q4-'+yr,    color:'#4a90d9'},
+    ];
     lanes = [{id:'l0',name:'Swim Lane 1',desc:'',pills:[]}];
-    types = [{id:'dev',label:'Development',color:'#2bbfa4'},{id:'design',label:'Product Design',color:'#1a1d23'},{id:'consider',label:'Being Considered',color:'#9ca3af'},{id:'biz',label:'Biz / GTM',color:'#34c471'},{id:'mkt',label:'Marketing',color:'#f5a623'},{id:'blocked',label:'Blocked',color:'#e53e3e'}];
-    document.getElementById('roadmapTitle').textContent='Roadmap';
-    document.getElementById('roadmapSubtitle').textContent='Current focus is on establishing the foundation';
+    types = [
+      {id:'dev',    label:'Development',      color:'#2bbfa4'},
+      {id:'design', label:'Product Design',   color:'#1a1d23'},
+      {id:'consider',label:'Being Considered',color:'#9ca3af'},
+      {id:'biz',    label:'Biz / GTM',        color:'#34c471'},
+      {id:'mkt',    label:'Marketing',        color:'#f5a623'},
+      {id:'blocked',label:'Blocked',          color:'#e53e3e'},
+    ];
+    document.getElementById('roadmapTitle').textContent = 'Roadmap';
+    document.getElementById('roadmapSubtitle').textContent = 'Current focus is on establishing the foundation';
+    document.getElementById('metaVersion').value = '';
+    document.getElementById('metaPublished').value = '';
+    document.getElementById('metaApproved').value = 'TBD';
+    // clear localStorage so this fresh state persists on refresh
+    try{ localStorage.removeItem(LS_KEY); } catch(e){}
     renderTypes(); build();
     setCollabBarNoMap();
     closeMapsPanel();
@@ -1770,14 +1809,16 @@ function newMapClick(){
 // ─── UNSAVED CHANGES ─────────────────────────────────────────────────────
 function markUnsaved(){
   _hasUnsavedChanges = true;
-  if(_currentMapId){
-    const bar = document.getElementById('unsavedBar');
-    const msg = document.getElementById('unsavedMsg');
-    const name = _mapsAllData[_currentMapId]?.meta?.name||'this map';
-    msg.textContent = 'Unsaved changes to "'+name+'"';
-    bar.classList.add('show');
-    scheduleSync(); // also auto-sync to Firebase
-  }
+  try{
+    if(_currentMapId){
+      const bar = document.getElementById('unsavedBar');
+      const msg = document.getElementById('unsavedMsg');
+      const name = (_mapsAllData&&_mapsAllData[_currentMapId]?.meta?.name)||'this map';
+      if(msg) msg.textContent = 'Unsaved changes to "'+name+'"';
+      if(bar) bar.classList.add('show');
+      scheduleSync();
+    }
+  } catch(e){ console.warn('markUnsaved error',e); }
 }
 function hideUnsavedBar(){ document.getElementById('unsavedBar').classList.remove('show'); }
 function discardUnsaved(){
@@ -1816,11 +1857,12 @@ function showAutoSaveLabel(msg){
 }
 
 // ─── HOOK markUnsaved INTO build/renderTypes ──────────────────────────────
-// Wrap scheduleSave to also mark unsaved
+// After init is done, patch scheduleSave to also trigger sync
+let _initDone = false;
 const _origScheduleSave = scheduleSave;
 function scheduleSave(){
   _origScheduleSave();
-  if(_currentMapId) markUnsaved();
+  if(_initDone && _currentMapId) markUnsaved();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -1837,12 +1879,14 @@ document.getElementById('aipName').addEventListener('keydown', e => {
       const data = JSON.parse(saved);
       if(applyState(data)){
         showAutoSaveLabel('Restored');
+        _initDone = true;
         return;
       }
     }
   } catch(e){ console.warn('Could not restore from localStorage', e); }
   renderTypes();
   build();
+  _initDone = true;
 })();
 
 // auto-delete trash older than TRASH_DAYS
