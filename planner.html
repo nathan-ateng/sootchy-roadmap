@@ -1112,7 +1112,7 @@ function closeColorPanel(){ document.getElementById('colorPanel').classList.remo
 // ─── QUARTER & LANE MGMT ──────────────────────────────────────────────────────
 function addQuarter(){ const label=prompt('Quarter name:','Q4-2026'); if(!label) return; const color=Q_COLORS[qColorIdx%Q_COLORS.length]; qColorIdx++; quarters.push({id:'q'+(Date.now()),label,color}); build(); }
 function deleteQuarter(qi){ if(quarters.length<=1){alert('Need at least one quarter.');return;} if(!confirm(`Delete "${quarters[qi].label}"?`))return; quarters.splice(qi,1); build(); }
-function addLane(){ const name=prompt('Lane name:','New Lane'); if(!name) return; lanes.push({id:'l'+(lidCounter++),name,desc:'',pills:[]}); buildLanes(); }
+function addLane(){ const name=prompt('Lane name:','New Lane'); if(!name) return; lanes.push({id:'l'+(lidCounter++),name,desc:'',pills:[]}); build(); }
 function removePill(pid,lid){ const lane=lanes.find(l=>l.id===lid); if(lane){ lane.pills=lane.pills.filter(p=>p.id!==pid); buildLanes(); } }
 
 // ─── RENDER TYPES (toolbar + legend + ctx menu) ──────────────────────────────
@@ -1361,7 +1361,7 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
@@ -1471,8 +1471,11 @@ _auth.onAuthStateChanged(user=>{
   if(user){
     loadAllMaps();
     startPresenceHeartbeat();
+    // if a mapId was restored from localStorage, reconnect to it
+    if(_currentMapId){
+      _reconnectMap(_currentMapId);
+    }
   } else {
-    // not logged in — still works offline via localStorage
     setCollabBarOffline();
   }
 });
@@ -1488,46 +1491,64 @@ function loadAllMaps(){
   _db.ref('quickmaps').on('value', snap=>{
     _mapsAllData = snap.val() || {};
     renderMapsList();
-    // update collab bar if a map is open
     if(_currentMapId && _mapsAllData[_currentMapId]){
       updateCollabBar(_currentMapId);
     }
   });
 }
 
-// ─── OPEN MAP FROM FIREBASE ───────────────────────────────────────────────
-let _mapListenerRef = null; // track the ref so we can call .off()
+// ─── MAP LISTENER MANAGEMENT ──────────────────────────────────────────────
+let _mapListenerRef = null;
+let _mapListenerCb  = null;
 
-function openMapFromFirebase(mapId){
-  // detach old listener using compat SDK ref.off()
-  if(_mapListenerRef){ _mapListenerRef.off('value', _mapListener); _mapListenerRef=null; _mapListener=null; }
+function _detachMapListener(){
+  if(_mapListenerRef && _mapListenerCb){
+    _mapListenerRef.off('value', _mapListenerCb);
+  }
+  _mapListenerRef = null;
+  _mapListenerCb  = null;
+  _mapListener    = null;
+}
 
-  _currentMapId = mapId;
+function _attachMapListener(mapId, skipFirstLoad){
+  _detachMapListener();
   const ref = _db.ref('quickmaps/'+mapId+'/state');
   _mapListenerRef = ref;
-
-  let _firstLoad = true;
-  _mapListener = ref.on('value', snap=>{
-    if(Date.now() < _ignoreRemoteUntil) return; // our own write — skip
+  let isFirst = !skipFirstLoad; // if skipFirstLoad=true we already have state, skip first push
+  _mapListenerCb = ref.on('value', snap=>{
+    // ignore our own writes
+    if(Date.now() < _ignoreRemoteUntil) return;
     const data = snap.val();
-    if(data){
-      if(_firstLoad){
-        _firstLoad = false;
-        const _s = _initDone; _initDone=false;
-        applyState(data);
-        _initDone=_s;
-        _hasUnsavedChanges = false;
-        hideUnsavedBar();
-      } else {
-        // update from another editor
-        const _s = _initDone; _initDone=false;
-        applyState(data);
-        _initDone=_s;
-      }
+    if(!data) return;
+    if(isFirst){
+      // first value — load it (used when opening from My Maps)
+      isFirst = false;
+      const _s = _initDone; _initDone = false;
+      applyState(data);
+      _initDone = _s;
+      _hasUnsavedChanges = false;
+      hideUnsavedBar();
+    } else {
+      // remote update from another editor
+      const _s = _initDone; _initDone = false;
+      applyState(data);
+      _initDone = _s;
     }
   });
+  _mapListener = _mapListenerCb;
+}
 
-  // join presence
+// reconnect on refresh — we already have the state, just watch for remote changes
+function _reconnectMap(mapId){
+  _attachMapListener(mapId, true); // skipFirstLoad=true
+  joinPresence(mapId);
+  setTimeout(()=>{ if(_mapsAllData[mapId]) updateCollabBar(mapId); }, 1500);
+}
+
+// ─── OPEN MAP FROM FIREBASE ───────────────────────────────────────────────
+function openMapFromFirebase(mapId){
+  _currentMapId = mapId;
+  _attachMapListener(mapId, false); // skipFirstLoad=false — load state from Firebase
   joinPresence(mapId);
   updateCollabBar(mapId);
   closeMapsPanel();
@@ -1895,33 +1916,9 @@ document.getElementById('aipName').addEventListener('keydown', e => {
       const data = JSON.parse(saved);
       if(applyState(data)){
         showAutoSaveLabel('Restored');
+        // if map was open, store mapId so onAuthStateChanged reconnects it
+        if(data._mapId) _currentMapId = data._mapId;
         _initDone = true;
-        // re-attach Firebase listener if user had a map open
-        if(data._mapId){
-          _currentMapId = data._mapId;
-          // wait for auth then re-attach
-          _auth.onAuthStateChanged(function reattach(user){
-            if(user){
-              _auth.removeAuthTokenListener && _auth.removeAuthTokenListener(reattach);
-              const ref = _db.ref('quickmaps/'+data._mapId+'/state');
-              _mapListenerRef = ref;
-              let firstSkip = true;
-              _mapListener = ref.on('value', snap=>{
-                if(firstSkip){ firstSkip=false; return; } // skip first echo of what we just restored
-                if(_ownWriteCount > 0){ _ownWriteCount--; return; }
-                const d = snap.val();
-                if(d){
-                  const _s = _initDone; _initDone=false;
-                  applyState(d);
-                  _initDone=_s;
-                }
-              });
-              joinPresence(data._mapId);
-              // update collab bar once maps load
-              setTimeout(()=>{ if(_mapsAllData[data._mapId]) updateCollabBar(data._mapId); }, 2000);
-            }
-          });
-        }
         return;
       }
     }
