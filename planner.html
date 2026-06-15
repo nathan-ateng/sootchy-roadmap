@@ -107,6 +107,10 @@ html,body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);colo
 .col-hl{position:absolute;top:0;bottom:0;background:rgba(74,144,217,.06);pointer-events:none;display:none;z-index:0}
 .col-hl.show{display:block}
 
+/* today line */
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#e53e3e;pointer-events:none;z-index:50;transform:translateX(-50%)}
+.today-label{position:absolute;top:4px;background:#e53e3e;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;pointer-events:none;z-index:51;transform:translateX(-50%);white-space:nowrap;letter-spacing:.03em}
+
 /* ghost */
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;border-radius:999px;height:28px;display:flex;align-items:center;padding:0 20px 0 9px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap;box-shadow:var(--sh-drag);transform:rotate(1.5deg) scale(1.04)}
 
@@ -273,7 +277,9 @@ body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;co
 <div class="canvas-outer" id="canvasOuter">
   <div class="canvas-header-row">
     <div class="lane-header-stub">Swim Lane</div>
-    <div class="quarters-header" id="quartersHeader"></div>
+    <div class="quarters-header" id="quartersHeader" style="position:relative">
+      <div id="todayLineHeader" style="position:absolute;top:0;bottom:0;width:2px;background:#e53e3e;pointer-events:none;z-index:50;display:none;transform:translateX(-50%)"></div>
+    </div>
     <button class="add-q-btn export-hide" onclick="addQuarter()" title="Add quarter">+</button>
   </div>
   <div class="lanes-area" id="lanesArea"></div>
@@ -408,7 +414,7 @@ let datePill=null, dateLaneId=null;
 let cpTarget=null, cpType=null, cpExtra=null;
 
 // ─── BUILD ────────────────────────────────────────────────────────────────────
-function build(){ buildHeaders(); buildLanes(); scheduleSave(); }
+function build(){ buildHeaders(); buildLanes(); updateTodayLineHeader(); scheduleSave(); }
 
 function buildHeaders(){
   const hdr = document.getElementById('quartersHeader');
@@ -479,6 +485,7 @@ function makeLaneRow(lane){
   const hl = document.createElement('div'); hl.className='col-hl'; hl.id='hl_'+lane.id;
   canv.appendChild(hl);
   redrawColLines(canv);
+  drawTodayLine(canv);
   lane.pills.forEach(p=>{ canv.appendChild(makePillEl(p,lane.id)); });
 
   canv.addEventListener('click', e=>{
@@ -505,6 +512,49 @@ function redrawColLines(canv){
     line.style.cssText=`position:absolute;top:0;bottom:0;width:0.5px;background:var(--border);pointer-events:none;z-index:0;left:${(i/n)*100}%`;
     canv.appendChild(line);
   }
+}
+
+// ─── TODAY LINE ─────────────────────────────────────────────────────────────
+function parseDateFromQuarterLabel(label){
+  const m = label.match(/Q(\d)-(\d{4})/i);
+  if(m){ const q=parseInt(m[1]),y=parseInt(m[2]),month=(q-1)*3; return new Date(y,month,1); }
+  const d=new Date(label); return isNaN(d)?null:d;
+}
+function getTodayPct(){
+  if(!quarters.length) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const starts=quarters.map(q=>parseDateFromQuarterLabel(q.label));
+  if(starts.some(d=>d===null)) return null;
+  const ends=starts.map((s,i)=>{
+    if(i<starts.length-1) return starts[i+1];
+    const e=new Date(s); e.setMonth(e.getMonth()+3); return e;
+  });
+  const totalStart=starts[0], totalEnd=ends[ends.length-1];
+  const totalMs=totalEnd-totalStart;
+  if(today<totalStart||today>totalEnd) return null;
+  return (today-totalStart)/totalMs;
+}
+function drawTodayLine(canv){
+  canv.querySelectorAll('.today-line').forEach(e=>e.remove());
+  const pct=getTodayPct(); if(pct===null) return;
+  const line=document.createElement('div');
+  line.className='today-line export-hide';
+  line.style.left=(pct*100)+'%';
+  canv.appendChild(line);
+}
+function updateTodayLineHeader(){
+  const el=document.getElementById('todayLineHeader'); if(!el) return;
+  const pct=getTodayPct();
+  if(pct===null){ el.style.display='none';
+    const old=document.getElementById('todayLineLabel'); if(old) old.remove(); return; }
+  el.style.display='block'; el.style.left=(pct*100)+'%';
+  let lbl=document.getElementById('todayLineLabel');
+  if(!lbl){
+    lbl=document.createElement('div'); lbl.id='todayLineLabel';
+    lbl.className='today-label export-hide'; lbl.textContent='Today';
+    el.parentElement.appendChild(lbl);
+  }
+  lbl.style.left=(pct*100)+'%';
 }
 
 function makePillEl(p, lid){
@@ -590,7 +640,9 @@ function getLaneMinHeight(lid){
   const lane = lanes.find(l => l.id === lid);
   if(!lane || !lane.pills.length) return 120;
   const rowMap = packRows(lane.pills);
-  const maxRow = Math.max(...rowMap.values());
+  const vals = [...rowMap.values()];
+  if(!vals.length) return 120;
+  const maxRow = Math.max(...vals);
   return PILL_TOP + (maxRow + 1) * ROW_H + 24;
 }
 
