@@ -1368,12 +1368,13 @@ function applyState(data){
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
 // ─── VERSION — bump this string on every deploy to bust stale localStorage ──
 // Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
 const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
 function scheduleSave(){
   if(typeof LS_KEY === 'undefined') return;
+  if(!lanes.length || !quarters.length) return; // don't save degenerate state
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(()=>{
     try{
