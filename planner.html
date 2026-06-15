@@ -265,6 +265,7 @@ body.exporting .pill-dates{pointer-events:none;text-decoration:none!important;co
     <button class="tbtn-dark secondary" onclick="triggerUpload()" title="Upload a saved JSON file to restore your roadmap">⬆ Load JSON</button>
     <input type="file" id="jsonUploadInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
     <div id="autoSaveLabel" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:4px"></div>
+    <a href="/quickmap-guide.html" target="_blank" title="How to use Quick Map" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;text-decoration:none;transition:all .13s;flex-shrink:0" onmouseover="this.style.borderColor='#4a90d9';this.style.color='#4a90d9'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">?</a>
   </div>
 </div>
 
@@ -1014,7 +1015,10 @@ function applyState(data){
 }
 
 // ─── LOCAL STORAGE AUTO-SAVE ──────────────────────────────────────────────────
-const LS_KEY = 'sootchy_roadmap_v1';
+// ─── VERSION — bump this string on every deploy to bust stale localStorage ──
+// Format: 'YYYY-MM-DD' or any string. Change it → fresh default for all users.
+const APP_VERSION = '2026-06-15';
+const LS_KEY = 'sootchy_roadmap_' + APP_VERSION;
 let autoSaveTimer = null;
 
 function scheduleSave(){
